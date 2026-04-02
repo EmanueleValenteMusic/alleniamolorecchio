@@ -1,0 +1,45 @@
+:root {
+  color-scheme: light;
+  --bg: #fff8ef;
+  --surface: #ffffff;
+  --surface-2: #fff1d8;
+  --stroke: #f0d8b5;
+  --text: #63463a;
+  --text-soft: #907567;
+  --pink: #ffbfd9;
+  --peach: #ffd3ae;
+  --yellow: #ffe98f;
+  --mint: #bfecc6;
+  --sky: #c7e8ff;
+  --lavender: #d8ccff;
+  --good: #8fd99a;
+  --bad: #ff9f9a;
+  --shadow: 0 8px 0 rgba(210, 166, 120, 0.18);
+}
+
+.playback-backdrop {
+  position: fixed;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: transparent;
+  transition: opacity 260ms ease, background-color 260ms ease, background-image 260ms ease;
+  overflow: hidden;
+}
+
+.playback-backdrop--visible {
+  opacity: 1;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Avenir Next Rounded", "Trebuchet MS", "Chalkboard SE", sans-serif;
+  transition: background 220ms ease;
+}
+
+select,
+button {
+  color: inherit;
+}

@@ -250,12 +250,11 @@ button {
   }
 
   .card-grid {
-    grid-template-columns: repeat(var(--card-mobile-columns, 2), minmax(96px, 1fr));
+    grid-template-columns: repeat(var(--card-mobile-columns, 2), minmax(var(--card-mobile-min, 96px), 1fr));
   }
 
   .interval-answer-grid {
-    grid-template-columns: repeat(4, 78px);
-    justify-content: center;
+    grid-template-columns: repeat(min(var(--interval-answer-columns, 4), 4), minmax(0, 1fr));
   }
 
   .sequence-strip {
@@ -283,12 +282,11 @@ button {
   }
 
   .card-grid {
-    grid-template-columns: repeat(var(--card-mobile-columns, 2), minmax(70px, 1fr));
+    grid-template-columns: repeat(var(--card-mobile-columns, 2), minmax(var(--card-mobile-min, 70px), 1fr));
   }
 
   .interval-answer-grid {
-    grid-template-columns: repeat(4, 72px);
-    justify-content: center;
+    grid-template-columns: repeat(min(var(--interval-answer-columns, 4), 4), minmax(0, 1fr));
     gap: 8px;
   }
 
@@ -885,7 +883,7 @@ button {
 
       ${g?`
       <section class="panel cards-panel">
-        <div class="card-grid" style="--card-mobile-columns:${Ue(p.length)};">
+        <div class="card-grid" style="--card-mobile-columns:${r?4:Ue(p.length)}; --card-mobile-min:${r?"0px":"70px"};">
           ${p.map((d,y)=>He(e,d,y)).join("")}
         </div>
       </section>

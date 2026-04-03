@@ -140,7 +140,7 @@ export function renderApp(state: AppState): string {
 
       ${showCardsPanel ? `
       <section class="panel cards-panel">
-        <div class="card-grid" style="--card-mobile-columns:${getBalancedCardColumns(visibleOptions.length)};">
+        <div class="card-grid" style="--card-mobile-columns:${isOrderingMode ? 4 : getBalancedCardColumns(visibleOptions.length)}; --card-mobile-min:${isOrderingMode ? '0px' : '70px'};">
           ${visibleOptions.map((chord, index) => renderPaletteCard(state, chord, index)).join('')}
         </div>
       </section>

@@ -9,7 +9,7 @@
 }
 
 .stat-chip {
-  min-width: 86px;
+  min-width: 78px;
   padding: 8px 12px;
   border-radius: 18px;
   background: var(--surface-2);

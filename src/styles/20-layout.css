@@ -175,15 +175,19 @@
   }
 
   .topbar__stats {
-    display: grid;
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 8px;
+    overflow-x: auto;
   }
 
   .card-grid {
-    grid-template-columns: repeat(var(--card-mobile-columns, 2), minmax(96px, 1fr));
+    grid-template-columns: repeat(var(--card-mobile-columns, 2), minmax(70px, 1fr));
   }
 
   .sequence-strip {
-    grid-template-columns: repeat(var(--slot-mobile-columns, 2), minmax(96px, 1fr));
+    grid-template-columns: repeat(var(--slot-mobile-columns, 2), minmax(70px, 1fr));
   }
 }

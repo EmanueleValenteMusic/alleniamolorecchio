@@ -267,16 +267,20 @@ button {
   }
 
   .topbar__stats {
-    display: grid;
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 8px;
+    overflow-x: auto;
   }
 
   .card-grid {
-    grid-template-columns: repeat(var(--card-mobile-columns, 2), minmax(96px, 1fr));
+    grid-template-columns: repeat(var(--card-mobile-columns, 2), minmax(70px, 1fr));
   }
 
   .sequence-strip {
-    grid-template-columns: repeat(var(--slot-mobile-columns, 2), minmax(96px, 1fr));
+    grid-template-columns: repeat(var(--slot-mobile-columns, 2), minmax(70px, 1fr));
   }
 }
 
@@ -291,7 +295,7 @@ button {
 }
 
 .stat-chip {
-  min-width: 86px;
+  min-width: 78px;
   padding: 8px 12px;
   border-radius: 18px;
   background: var(--surface-2);

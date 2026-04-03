@@ -215,9 +215,12 @@ function handlePointerUp(event: PointerEvent): void {
 
   const slotIndex = getSlotIndexFromPoint(event.clientX, event.clientY);
   if (slotIndex !== null) {
-    state.round.placements[slotIndex] = dragState.degree;
     if (dragState.sourceType === 'slot' && dragState.sourceSlot !== null && dragState.sourceSlot !== slotIndex) {
-      state.round.placements[dragState.sourceSlot] = null;
+      const displacedDegree = state.round.placements[slotIndex];
+      state.round.placements[slotIndex] = dragState.degree;
+      state.round.placements[dragState.sourceSlot] = displacedDegree;
+    } else {
+      state.round.placements[slotIndex] = dragState.degree;
     }
   } else if (dragState.sourceType === 'slot' && dragState.sourceSlot !== null) {
     state.round.placements[dragState.sourceSlot] = null;

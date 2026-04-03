@@ -18,7 +18,7 @@ import type {
 import { syncLiveUi } from './ui/live';
 import { renderApp } from './ui/templates';
 
-const CARD_ACCENTS = ['#ffb7d5', '#ffd98e', '#bce6ff', '#bdf2c5', '#d2c4ff', '#ffd0ae', '#ffe69c'];
+const CARD_ACCENTS = ['#ffb3ba', '#ffd6a5', '#fdffb6', '#caffbf', '#bde0fe', '#cde7ff', '#d7c6ff', '#f1c0e8', '#ffc8dd', '#d9ed92'];
 
 const appElement = document.querySelector<HTMLDivElement>('#app');
 
@@ -29,13 +29,14 @@ if (!appElement) {
 const appRoot = appElement;
 const initialSettings = loadSettings();
 const piano = new PianoEngine();
+const initialRound = createRound(initialSettings);
 
 const state: AppState = {
   settings: initialSettings,
   score: loadScore(),
-  round: createRound(initialSettings),
-  feedback: '',
-  feedbackTone: 'idle',
+  round: initialRound,
+  feedback: initialRound.orderingChallenge?.prompt ?? '',
+  feedbackTone: initialRound.orderingChallenge ? 'info' : 'idle',
   isPlaying: false,
   audioReady: false
 };
@@ -78,7 +79,7 @@ function bindUi(): void {
 
     state.round.placements = Array.from({ length: state.round.slotCount }, () => null);
     state.round.lastCheckResults = Array.from({ length: state.round.slotCount }, () => null);
-    setFeedback('', 'idle');
+    restoreContextualFeedback();
     render();
   });
 
@@ -290,6 +291,15 @@ async function playSequence(): Promise<void> {
     }
 
     await playIntervalQuestion();
+    return;
+  }
+
+  if (isOrderingMode(state.settings.playMode)) {
+    if (state.round.solved || state.round.locked) {
+      startNewRound('');
+    }
+
+    await playOrderingSequence();
     return;
   }
 
@@ -566,12 +576,17 @@ function checkAnswer(): void {
     return;
   }
 
-  if (state.round.sequencePlayCount === 0) {
+  if (isOrderingMode(state.settings.playMode)) {
+    if (state.round.placements.some((degree) => degree === null)) {
+      setFeedback('Riempi tutti gli slot', 'error');
+      return;
+    }
+  } else if (state.round.sequencePlayCount === 0) {
     setFeedback('Ascolta prima', 'error');
     return;
   }
 
-  if (state.round.placements.some((degree) => degree === null)) {
+  if (!isOrderingMode(state.settings.playMode) && state.round.placements.some((degree) => degree === null)) {
     setFeedback('Completa gli slot', 'error');
     return;
   }
@@ -603,9 +618,11 @@ function checkAnswer(): void {
   state.score.totalPoints = Math.max(0, state.score.totalPoints - getMistakePenalty(state.round));
   persistScore(state.score);
   const correctCount = state.round.lastCheckResults.filter((result) => result === 'correct').length;
-  const correctSequence = state.round.solution
-    .map((degree) => state.round.options[degree].symbol)
-    .join(' · ');
+  const correctSequence = isOrderingMode(state.settings.playMode)
+    ? buildOrderingSolutionMarkup(state.round.solution)
+    : state.round.solution
+      .map((degree) => state.round.options[degree].symbol)
+      .join(' · ');
   setFeedback(`${correctCount}/${state.round.slotCount} · ${correctSequence}`, 'error');
   render();
 }
@@ -614,7 +631,8 @@ function startNewRound(message: string): void {
   clearPendingTimers();
   state.isPlaying = false;
   state.round = createRound(state.settings);
-  setFeedback(message, message ? 'info' : 'idle');
+  const fallbackMessage = !message ? getContextualFeedbackMessage() : message;
+  setFeedback(fallbackMessage, fallbackMessage ? 'info' : 'idle');
   render();
 }
 
@@ -625,15 +643,20 @@ function setFeedback(message: string, tone: FeedbackTone): void {
 }
 
 function clearPlacementHintIfNeeded(): void {
-  if (state.feedback !== 'Inserisci almeno uno slot' || state.feedbackTone !== 'info') {
+  if (state.feedbackTone !== 'error' && state.feedbackTone !== 'info') {
     return;
   }
 
-  if (state.round.placements.every((degree) => degree === null)) {
-    return;
-  }
+  restoreContextualFeedback();
+}
 
-  setFeedback('', 'idle');
+function restoreContextualFeedback(): void {
+  const message = getContextualFeedbackMessage();
+  setFeedback(message, message ? 'info' : 'idle');
+}
+
+function getContextualFeedbackMessage(): string {
+  return state.round.orderingChallenge?.prompt ?? '';
 }
 
 function clearPendingTimers(): void {
@@ -708,6 +731,10 @@ function getCardAccent(degree: number): string {
   return CARD_ACCENTS[safeIndex % CARD_ACCENTS.length];
 }
 
+function buildOrderingSolutionMarkup(solution: number[]): string {
+  return `<span class="feedback-swatches">${solution.map((degree, index) => `<span class="feedback-swatch" style="--swatch:${getCardAccent(degree)}" aria-label="Carta ${index + 1}" title="Carta ${index + 1}"></span>`).join('')}</span>`;
+}
+
 function playIntervalPrompt(question: NonNullable<AppState['round']['intervalQuestion']>, startAt: number): number {
   if (question.playbackMode === 'armonico') {
     piano.playSingle(question.midi[0], { when: startAt, duration: 1.02, velocity: 0.34 });
@@ -739,6 +766,13 @@ function playOption(
 ): number {
   const when = options.when;
 
+  if (playMode === 'altezza' || playMode === 'durata' || playMode === 'intensita') {
+    const duration = option.playDuration ?? 0.82;
+    const velocity = option.playVelocity ?? 0.34;
+    piano.playSingle(option.midi[0], { when, duration, velocity });
+    return duration;
+  }
+
   if (playMode === 'nota singola') {
     const duration = options.preview ? 0.86 : 0.76;
     piano.playSingle(option.midi[0], { when, duration, velocity: options.preview ? 0.34 : 0.36 });
@@ -758,6 +792,10 @@ function playOption(
 }
 
 function getSequenceStep(playMode: PlayMode, playbackMode: PlaybackMode): number {
+  if (playMode === 'altezza' || playMode === 'durata' || playMode === 'intensita') {
+    return 0.98;
+  }
+
   if (playMode === 'nota singola') {
     return 0.86;
   }
@@ -873,7 +911,7 @@ function isScaleFamily(value: string | undefined): value is ScaleFamily {
 }
 
 function isPlayMode(value: string | undefined): value is PlayMode {
-  return value === 'intervalli' || value === 'nota singola' || value === 'triadi' || value === 'quadriadi';
+  return value === 'intervalli' || value === 'altezza' || value === 'durata' || value === 'intensita' || value === 'nota singola' || value === 'triadi' || value === 'quadriadi';
 }
 
 function isIntervalType(value: string | undefined): value is IntervalType {
@@ -891,6 +929,60 @@ function isIntervalType(value: string | undefined): value is IntervalType {
 
 function isIntervalPlaybackMode(value: string | undefined): value is IntervalPlaybackModeSetting {
   return value === 'armonico' || value === 'melodico' || value === 'entrambi';
+}
+
+async function playOrderingSequence(): Promise<void> {
+  if (state.isPlaying) {
+    return;
+  }
+
+  const challenge = state.round.orderingChallenge;
+  if (!challenge) {
+    return;
+  }
+
+  const ready = await piano.ensureReady();
+  state.audioReady = ready;
+  if (!ready) {
+    setFeedback('Audio non disponibile', 'error');
+    return;
+  }
+
+  clearPendingTimers();
+  state.isPlaying = true;
+  state.round.sequencePlayCount += 1;
+  syncLiveUi(appRoot, state);
+
+  const orderedDegrees = state.round.solution;
+  const startAt = piano.currentTime + 0.08;
+  const currentRoundId = state.round.id;
+  let cursor = startAt;
+
+  orderedDegrees.forEach((degree) => {
+    const option = state.round.options[degree];
+    const duration = playOption(option, state.settings.playMode, state.settings.playbackMode, { preview: false, when: cursor });
+    cursor += Math.max(option.sequenceGap ?? (duration + 0.2), duration + 0.2);
+  });
+
+  const durationMs = Math.ceil((cursor - startAt + 0.18) * 1000);
+  pulseSequenceBackground(durationMs);
+
+  playbackTimerId = window.setTimeout(() => {
+    if (state.round.id !== currentRoundId) {
+      return;
+    }
+
+    state.isPlaying = false;
+    state.round.sequenceFinishedAt = Date.now();
+    if (state.round.answerWindowStartedAt === null) {
+      state.round.answerWindowStartedAt = state.round.sequenceFinishedAt;
+    }
+    syncLiveUi(appRoot, state);
+  }, durationMs);
+}
+
+function isOrderingMode(playMode: PlayMode): playMode is 'altezza' | 'durata' | 'intensita' {
+  return playMode === 'altezza' || playMode === 'durata' || playMode === 'intensita';
 }
 
 function lightenHex(hex: string, amount: number): string {

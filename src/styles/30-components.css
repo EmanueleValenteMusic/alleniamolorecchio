@@ -195,6 +195,18 @@
   color: rgba(99, 70, 58, 0.82);
 }
 
+.chord-card--ordering {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  cursor: grab;
+}
+
+.chord-card__glyph {
+  font-size: 3.2rem;
+  line-height: 1;
+}
+
 .card-notes-layer {
   position: absolute;
   inset: 0;
@@ -244,6 +256,22 @@
 .feedback--error {
   background: #fff0ef;
   border-color: var(--bad);
+}
+
+.feedback-swatches {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+.feedback-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  background: var(--swatch);
+  border: 2px solid rgba(99, 70, 58, 0.22);
 }
 
 .interval-intro {

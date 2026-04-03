@@ -125,6 +125,10 @@
   gap: 12px;
 }
 
+.cards-panel {
+  min-height: 202px;
+}
+
 @media (max-width: 980px) {
   .sequence-strip {
     grid-template-columns: repeat(var(--slot-mobile-columns, 4), minmax(120px, 1fr));

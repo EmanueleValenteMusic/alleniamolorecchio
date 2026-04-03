@@ -5,6 +5,7 @@ import type {
   IntervalDirection,
   IntervalQuestion,
   IntervalType,
+  OrderingChallenge,
   PlayMode,
   RoundState,
   ScaleDefinition,
@@ -97,6 +98,10 @@ export function createRound(settings: SettingsState): RoundState {
     return createIntervalRound(settings);
   }
 
+  if (settings.playMode === 'altezza' || settings.playMode === 'durata' || settings.playMode === 'intensita') {
+    return createOrderingRound(settings);
+  }
+
   const familyScales = SCALES.filter((scale) => scale.family === settings.scaleFamily);
   const scale = sample(familyScales);
   const options = buildOptions(scale, settings.playMode);
@@ -122,7 +127,8 @@ export function createRound(settings: SettingsState): RoundState {
     answerWindowStartedAt: null,
     sequenceFinishedAt: null,
     intervalQuestion: null,
-    selectedAnswerId: null
+    selectedAnswerId: null,
+    orderingChallenge: null
   };
 }
 
@@ -234,7 +240,44 @@ function createIntervalRound(settings: SettingsState): RoundState {
       playbackMode,
       direction
     },
-    selectedAnswerId: null
+    selectedAnswerId: null,
+    orderingChallenge: null
+  };
+}
+
+function createOrderingRound(settings: SettingsState): RoundState {
+  const challenge = createOrderingChallenge(settings.playMode);
+  const orderedOptions = buildOrderingOptions(settings.slotCount, challenge);
+  const shuffledOptions = shuffle(orderedOptions).map((option, index) => ({ ...option, degree: index }));
+  const solution = [...shuffledOptions]
+    .sort((left, right) => challenge.direction === 'ascendente'
+      ? (left.sortRank ?? 0) - (right.sortRank ?? 0)
+      : (right.sortRank ?? 0) - (left.sortRank ?? 0))
+    .map((option) => option.degree);
+
+  roundIdSeed += 1;
+
+  return {
+    id: roundIdSeed,
+    scale: null,
+    options: shuffledOptions,
+    solution,
+    placements: Array.from({ length: settings.slotCount }, () => null),
+    lastCheckResults: Array.from({ length: settings.slotCount }, () => null),
+    attempts: 0,
+    counted: false,
+    locked: false,
+    solved: false,
+    slotCount: settings.slotCount,
+    playMode: settings.playMode,
+    playbackMode: 'armonico',
+    sequencePlayCount: 0,
+    cardPreviewCount: 0,
+    answerWindowStartedAt: null,
+    sequenceFinishedAt: null,
+    intervalQuestion: null,
+    selectedAnswerId: null,
+    orderingChallenge: challenge
   };
 }
 
@@ -252,4 +295,95 @@ function sample<T>(items: T[]): T {
 
 function formatNoteName(midi: number): string {
   return CHROMATIC_NOTES[midi % 12];
+}
+
+function createOrderingChallenge(playMode: Extract<PlayMode, 'altezza' | 'durata' | 'intensita'>): OrderingChallenge {
+  const direction = sample<OrderingChallenge['direction']>(['ascendente', 'discendente']);
+
+  if (playMode === 'altezza') {
+    return {
+      kind: playMode,
+      direction,
+      prompt: direction === 'ascendente' ? 'Ordina dal più grave al più acuto' : 'Ordina dal più acuto al più grave'
+    };
+  }
+
+  if (playMode === 'durata') {
+    return {
+      kind: playMode,
+      direction,
+      prompt: direction === 'ascendente' ? 'Ordina dal più corto al più lungo' : 'Ordina dal più lungo al più corto'
+    };
+  }
+
+  return {
+    kind: playMode,
+    direction,
+    prompt: direction === 'ascendente' ? 'Ordina dal più piano al più forte' : 'Ordina dal più forte al più piano'
+  };
+}
+
+function buildOrderingOptions(slotCount: number, challenge: OrderingChallenge): ChordOption[] {
+  const labels = Array.from({ length: slotCount }, (_, index) => String.fromCharCode(65 + index));
+
+  if (challenge.kind === 'altezza') {
+    const baseMidi = randomBetween(60, 79 - slotCount);
+    return labels.map((label, index) => ({
+      degree: index,
+      numeral: 'Suono',
+      quality: '',
+      label,
+      symbol: label,
+      notes: ['Tocca per ascoltare'],
+      midi: [baseMidi + index],
+      playDuration: 0.82,
+      playVelocity: 0.34,
+      sequenceGap: 0.9,
+      sortRank: index
+    }));
+  }
+
+  if (challenge.kind === 'durata') {
+    const baseMidi = randomBetween(63, 74);
+    const baseDuration = 0.45 + randomBetween(0, 4) * 0.1;
+    return labels.map((label, index) => ({
+      degree: index,
+      numeral: 'Durata',
+      quality: '',
+      label,
+      symbol: label,
+      notes: ['Tocca per ascoltare'],
+      midi: [baseMidi],
+      playDuration: baseDuration + index * 0.5,
+      playVelocity: 0.34,
+      sequenceGap: baseDuration + index * 0.5 + 0.24,
+      sortRank: index
+    }));
+  }
+
+  const baseMidi = randomBetween(63, 74);
+  return labels.map((label, index) => ({
+    degree: index,
+    numeral: 'Intensita',
+    quality: '',
+    label,
+    symbol: label,
+    notes: ['Tocca per ascoltare'],
+    midi: [baseMidi],
+    playDuration: 0.82,
+    playVelocity: 0.18 + index * 0.08,
+    sequenceGap: 0.9,
+    sortRank: index
+  }));
+}
+
+function shuffle<T>(items: T[]): T[] {
+  const copy = [...items];
+
+  for (let index = copy.length - 1; index > 0; index -= 1) {
+    const swapIndex = randomInt(index + 1);
+    [copy[index], copy[swapIndex]] = [copy[swapIndex], copy[index]];
+  }
+
+  return copy;
 }

@@ -1,12 +1,19 @@
 export type ScaleFamily = 'maggiore' | 'minore naturale' | 'minore armonica' | 'minore melodica';
-export type PlayMode = 'intervalli' | 'nota singola' | 'triadi' | 'quadriadi';
+export type PlayMode = 'intervalli' | 'altezza' | 'durata' | 'intensita' | 'nota singola' | 'triadi' | 'quadriadi';
 export type PlaybackMode = 'armonico' | 'melodico';
 export type IntervalType = '2ª' | '3ª' | '4ª' | '5ª' | '6ª' | '7ª' | '5ª, 4ª, 8ª' | '9ª' | 'Scala maggiore' | 'Scala cromatica';
 export type IntervalPlaybackModeSetting = 'armonico' | 'melodico' | 'entrambi';
 export type IntervalDirection = 'ascendente' | 'discendente';
+export type OrderingDirection = 'ascendente' | 'discendente';
 export type FeedbackTone = 'idle' | 'success' | 'error' | 'info';
 export type DragSource = 'palette' | 'slot';
 export type SlotResult = 'correct' | 'wrong' | null;
+
+export interface OrderingChallenge {
+  kind: 'altezza' | 'durata' | 'intensita';
+  direction: OrderingDirection;
+  prompt: string;
+}
 
 export interface IntervalAnswerOption {
   id: string;
@@ -46,6 +53,10 @@ export interface ChordOption {
   symbol: string;
   notes: string[];
   midi: number[];
+  playDuration?: number;
+  playVelocity?: number;
+  sequenceGap?: number;
+  sortRank?: number;
 }
 
 export interface SettingsState {
@@ -86,6 +97,7 @@ export interface RoundState {
   sequenceFinishedAt: number | null;
   intervalQuestion: IntervalQuestion | null;
   selectedAnswerId: string | null;
+  orderingChallenge: OrderingChallenge | null;
 }
 
 export interface AppState {

@@ -11,6 +11,14 @@ export function getScoreBounds(settings: SettingsState): ScoreBounds {
     };
   }
 
+  if (settings.playMode === 'altezza' || settings.playMode === 'durata' || settings.playMode === 'intensita') {
+    const modeBonus = settings.playMode === 'altezza' ? 46 : settings.playMode === 'durata' ? 38 : 42;
+    return {
+      maxScore: 68 + settings.slotCount * 24 + modeBonus,
+      minScore: 14 + settings.slotCount * 6
+    };
+  }
+
   const slotWeight = settings.slotCount * 26;
   const modeBonus = settings.playMode === 'quadriadi' ? 120 : settings.playMode === 'triadi' ? 40 : 0;
   const playbackBonus = settings.playMode === 'nota singola' ? 0 : settings.playbackMode === 'melodico' ? 28 : 0;
@@ -33,6 +41,24 @@ export function computeScoreBreakdown(round: RoundState, settings: SettingsState
     const timePenalty = elapsedSeconds <= 8 ? 0 : Math.ceil((elapsedSeconds - 8) * (answerCount >= 7 ? 5 : 3));
     const attemptPenalty = round.attempts * 14;
     const earned = Math.max(bounds.minScore, bounds.maxScore - sequencePenalty - timePenalty - attemptPenalty);
+
+    return {
+      ...bounds,
+      earned,
+      elapsedSeconds,
+      sequencePenalty,
+      cardPenalty,
+      timePenalty,
+      attemptPenalty
+    };
+  }
+
+  if (settings.playMode === 'altezza' || settings.playMode === 'durata' || settings.playMode === 'intensita') {
+    const sequencePenalty = Math.max(0, round.sequencePlayCount - 1) * 16;
+    const cardPenalty = round.cardPreviewCount * 6;
+    const timePenalty = elapsedSeconds <= 9 ? 0 : Math.ceil((elapsedSeconds - 9) * 4);
+    const attemptPenalty = round.attempts * 12;
+    const earned = Math.max(bounds.minScore, bounds.maxScore - sequencePenalty - cardPenalty - timePenalty - attemptPenalty);
 
     return {
       ...bounds,
@@ -68,6 +94,10 @@ export function getMistakePenalty(round: RoundState): number {
   if (round.playMode === 'intervalli') {
     const answerCount = round.intervalQuestion?.answerOptions.length ?? 2;
     return 8 + answerCount * 2;
+  }
+
+  if (round.playMode === 'altezza' || round.playMode === 'durata' || round.playMode === 'intensita') {
+    return 8 + round.slotCount * 3;
   }
 
   return 6 + round.slotCount * 4 + (round.playMode === 'quadriadi' ? 12 : round.playMode === 'triadi' ? 4 : 0);

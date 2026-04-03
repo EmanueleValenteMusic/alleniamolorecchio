@@ -50,6 +50,6 @@ export function syncLiveUi(root: HTMLElement, state: AppState): void {
   }
 
   if (feedbackText) {
-    feedbackText.textContent = state.feedback;
+    feedbackText.innerHTML = state.feedback;
   }
 }

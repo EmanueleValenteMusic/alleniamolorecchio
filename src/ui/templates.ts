@@ -1,6 +1,6 @@
 import type { AppState, ChordOption, DragSource, IntervalAnswerOption, SlotResult } from '../app/types';
 
-const CARD_ACCENTS = ['#ffb7d5', '#ffd98e', '#bce6ff', '#bdf2c5', '#d2c4ff', '#ffd0ae', '#ffe69c'];
+const CARD_ACCENTS = ['#ffb3ba', '#ffd6a5', '#fdffb6', '#caffbf', '#bde0fe', '#cde7ff', '#d7c6ff', '#f1c0e8', '#ffc8dd', '#d9ed92'];
 
 export function renderApp(state: AppState): string {
   const totalAnswers = state.score.roundsPlayed;
@@ -9,6 +9,13 @@ export function renderApp(state: AppState): string {
     ? 100
     : Math.round((state.score.roundsSolved / state.score.roundsPlayed) * 100);
   const isIntervalMode = state.settings.playMode === 'intervalli';
+  const isOrderingMode = state.settings.playMode === 'altezza' || state.settings.playMode === 'durata' || state.settings.playMode === 'intensita';
+  const hideQuestionButton = isOrderingMode;
+  const usedDegrees = new Set(state.round.placements.filter((degree): degree is number => degree !== null));
+  const visibleOptions = isOrderingMode
+    ? state.round.options.filter((option) => !usedDegrees.has(option.degree))
+    : state.round.options;
+  const showCardsPanel = !isIntervalMode;
   const primaryActionLabel = state.isPlaying ? 'Suona...' : getPrimaryActionLabel(state);
 
   return `
@@ -36,6 +43,9 @@ export function renderApp(state: AppState): string {
             <span>Modalita</span>
             <select data-setting="play-mode">
               <option value="intervalli" ${state.settings.playMode === 'intervalli' ? 'selected' : ''}>Intervalli</option>
+              <option value="altezza" ${state.settings.playMode === 'altezza' ? 'selected' : ''}>Altezza</option>
+              <option value="durata" ${state.settings.playMode === 'durata' ? 'selected' : ''}>Durata</option>
+              <option value="intensita" ${state.settings.playMode === 'intensita' ? 'selected' : ''}>Intensità</option>
               <option value="nota singola" ${state.settings.playMode === 'nota singola' ? 'selected' : ''}>Nota singola</option>
               <option value="triadi" ${state.settings.playMode === 'triadi' ? 'selected' : ''}>Triadi</option>
               <option value="quadriadi" ${state.settings.playMode === 'quadriadi' ? 'selected' : ''}>Quadriadi</option>
@@ -74,6 +84,13 @@ export function renderApp(state: AppState): string {
                 </select>
               </label>
             ` : ''}
+          ` : isOrderingMode ? `
+            <label class="mini-control">
+              <span>Slot</span>
+              <select data-setting="slot-count">
+                ${Array.from({ length: 7 }, (_, offset) => offset + 2).map((value) => `<option value="${value}" ${value === state.settings.slotCount ? 'selected' : ''}>${value}</option>`).join('')}
+              </select>
+            </label>
           ` : `
             <label class="mini-control">
               <span>Slot</span>
@@ -102,7 +119,7 @@ export function renderApp(state: AppState): string {
           `}
         </div>
         <div class="controls-panel__row controls-panel__row--actions">
-          <button class="pill pill--question" data-role="play-sequence" data-action="play-sequence">${primaryActionLabel}</button>
+          ${hideQuestionButton ? '' : `<button class="pill pill--question" data-role="play-sequence" data-action="play-sequence">${primaryActionLabel}</button>`}
           ${isIntervalMode ? '' : '<button class="pill pill--answer" data-role="play-answer" data-action="play-answer">Ascolta risposta</button>'}
           <button class="pill pill--check" data-role="check-answer" data-action="check-answer">Verifica</button>
           ${isIntervalMode ? '' : '<button class="pill pill--reset" data-role="reset-slots" data-action="reset-slots">Pulisci</button>'}
@@ -121,13 +138,13 @@ export function renderApp(state: AppState): string {
         </div>
       </section>
 
-      ${isIntervalMode ? '' : `
+      ${showCardsPanel ? `
       <section class="panel cards-panel">
         <div class="card-grid">
-          ${state.round.options.map((chord, index) => renderPaletteCard(chord, index)).join('')}
+          ${visibleOptions.map((chord, index) => renderPaletteCard(state, chord, index)).join('')}
         </div>
       </section>
-      `}
+      ` : ''}
     </main>
   `;
 }
@@ -157,7 +174,7 @@ function renderSlot(state: AppState, degree: number | null, index: number, resul
     <div class="slot${assigned ? ' slot--filled' : ''}${resultClass}" data-slot-index="${index}">
       <div class="slot__index">${index + 1}</div>
       <div class="slot__body">
-        ${assigned ? renderCardMarkup(assigned, {
+        ${assigned ? renderCardMarkup(state, assigned, {
           accent: CARD_ACCENTS[assigned.degree % CARD_ACCENTS.length],
           sourceType: 'slot',
           sourceSlot: index,
@@ -168,9 +185,9 @@ function renderSlot(state: AppState, degree: number | null, index: number, resul
   `;
 }
 
-function renderPaletteCard(chord: ChordOption, index: number): string {
-  return renderCardMarkup(chord, {
-    accent: CARD_ACCENTS[index % CARD_ACCENTS.length],
+function renderPaletteCard(state: AppState, chord: ChordOption, index: number): string {
+  return renderCardMarkup(state, chord, {
+    accent: CARD_ACCENTS[chord.degree % CARD_ACCENTS.length],
     sourceType: 'palette',
     sourceSlot: null,
     compact: false
@@ -207,9 +224,14 @@ function renderIntervalAnswerButton(state: AppState, answer: IntervalAnswerOptio
 }
 
 function renderCardMarkup(
+  state: AppState,
   chord: ChordOption,
   options: { accent: string; sourceType: DragSource; sourceSlot: number | null; compact: boolean; }
 ): string {
+  if (state.settings.playMode === 'altezza' || state.settings.playMode === 'durata' || state.settings.playMode === 'intensita') {
+    return renderOrderingCardMarkup(chord, options);
+  }
+
   const sourceSlot = options.sourceSlot === null ? '' : ` data-origin-slot="${options.sourceSlot}"`;
   const compactClass = options.compact ? ' chord-card--slot' : '';
 
@@ -225,6 +247,28 @@ function renderCardMarkup(
       <span class="chord-card__numeral">${chord.numeral}</span>
       <strong>${chord.symbol}</strong>
       <small>${chord.notes.join(' · ')}</small>
+      <span class="card-notes-layer" aria-hidden="true"></span>
+    </button>
+  `;
+}
+
+function renderOrderingCardMarkup(
+  chord: ChordOption,
+  options: { accent: string; sourceType: DragSource; sourceSlot: number | null; compact: boolean; }
+): string {
+  const sourceSlot = options.sourceSlot === null ? '' : ` data-origin-slot="${options.sourceSlot}"`;
+  const compactClass = options.compact ? ' chord-card--slot' : '';
+
+  return `
+    <button
+      class="chord-card chord-card--ordering${compactClass}"
+      type="button"
+      data-source="${options.sourceType}"
+      data-degree="${chord.degree}"
+      style="--card-accent:${options.accent}"
+      ${sourceSlot}
+    >
+      <strong class="chord-card__glyph">♪</strong>
       <span class="card-notes-layer" aria-hidden="true"></span>
     </button>
   `;

@@ -58,6 +58,12 @@ body.is-dragging {
   user-select: none;
 }
 
+@media (max-width: 760px) {
+  .app-signature {
+    z-index: -1;
+  }
+}
+
 select,
 button {
   color: inherit;

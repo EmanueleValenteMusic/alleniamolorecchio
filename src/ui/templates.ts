@@ -132,10 +132,10 @@ export function renderApp(state: AppState): string {
         <div class="sequence-strip" style="--slot-columns:${state.round.slotCount}; --slot-mobile-columns:${getBalancedSlotColumns(state.round.slotCount)};">
           ${state.round.placements.map((degree, index) => renderSlot(state, degree, index, state.round.lastCheckResults[index])).join('')}
         </div>
-        `}
         <div class="feedback feedback--${state.feedbackTone}" data-role="feedback-box">
           <p data-role="feedback-text">${state.feedback}</p>
         </div>
+        `}
       </section>
 
       ${showCardsPanel ? `
@@ -160,6 +160,9 @@ function renderIntervalBoard(state: AppState): string {
     <div class="interval-intro">
       <span class="interval-intro__badge">${question.family}</span>
       <p>Ascolta le due note e scegli l'intervallo corretto.</p>
+    </div>
+    <div class="feedback feedback--${state.feedbackTone}" data-role="feedback-box">
+      <p data-role="feedback-text">${state.feedback}</p>
     </div>
     <div class="interval-answer-grid" style="--interval-answer-columns:${getIntervalAnswerColumns(question.answerOptions.length)};">
       ${question.answerOptions.map((answer, index) => renderIntervalAnswerButton(state, answer, index)).join('')}

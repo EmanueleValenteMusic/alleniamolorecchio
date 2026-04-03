@@ -147,12 +147,17 @@
   user-select: none;
 }
 
+.chord-card[data-source] {
+  touch-action: none;
+}
+
 .chord-card:hover {
   transform: translateY(-2px) rotate(-1deg);
 }
 
 .interval-choice {
   cursor: pointer;
+  touch-action: auto;
 }
 
 .interval-choice--selected {

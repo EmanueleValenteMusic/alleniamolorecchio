@@ -371,7 +371,7 @@ function buildOrderingOptions(slotCount: number, challenge: OrderingChallenge): 
     notes: ['Tocca per ascoltare'],
     midi: [baseMidi],
     playDuration: 0.82,
-    playVelocity: 0.18 + index * 0.08,
+    playVelocity: Math.min(0.92, 0.12 + index * 0.11),
     sequenceGap: 0.9,
     sortRank: index
   }));

@@ -139,7 +139,7 @@
   }
 
   .interval-answer-grid {
-    grid-template-columns: repeat(min(var(--interval-answer-columns, 2), 2), minmax(160px, 1fr));
+    grid-template-columns: repeat(min(var(--interval-answer-columns, 4), 4), minmax(0, 1fr));
   }
 }
 
@@ -156,7 +156,7 @@
   }
 
   .interval-answer-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(min(var(--interval-answer-columns, 4), 4), minmax(0, 1fr));
   }
 
   .sequence-strip {
@@ -185,6 +185,11 @@
 
   .card-grid {
     grid-template-columns: repeat(var(--card-mobile-columns, 2), minmax(70px, 1fr));
+  }
+
+  .interval-answer-grid {
+    grid-template-columns: repeat(min(var(--interval-answer-columns, 4), 4), minmax(0, 1fr));
+    gap: 8px;
   }
 
   .sequence-strip {

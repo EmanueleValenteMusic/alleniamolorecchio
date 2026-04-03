@@ -318,6 +318,9 @@
   pointer-events: none;
   z-index: 1000;
   transform: translate(-999px, -999px);
+  transition: none;
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
 .is-dragging {
@@ -325,6 +328,25 @@
 }
 
 @media (max-width: 760px) {
+  .interval-choice {
+    min-height: 112px;
+    padding: 10px 8px;
+    border-radius: 18px;
+  }
+
+  .interval-choice .chord-card__numeral {
+    font-size: 0.62rem;
+    padding: 3px 6px;
+  }
+
+  .interval-choice strong {
+    font-size: 0.92rem;
+  }
+
+  .interval-choice small {
+    font-size: 0.62rem;
+  }
+
   .slot {
     min-height: 148px;
     border-radius: 22px;
@@ -361,6 +383,20 @@
 }
 
 @media (max-width: 560px) {
+  .interval-choice {
+    min-height: 98px;
+    padding: 8px 6px;
+    border-radius: 16px;
+  }
+
+  .interval-choice strong {
+    font-size: 0.8rem;
+  }
+
+  .interval-choice small {
+    font-size: 0.56rem;
+  }
+
   .slot {
     min-height: 134px;
     padding: 7px;

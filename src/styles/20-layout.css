@@ -135,7 +135,7 @@
   }
 
   .card-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(var(--card-mobile-columns, 4), minmax(108px, 1fr));
   }
 
   .interval-answer-grid {
@@ -152,7 +152,7 @@
   }
 
   .card-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(var(--card-mobile-columns, 2), minmax(96px, 1fr));
   }
 
   .interval-answer-grid {
@@ -160,7 +160,7 @@
   }
 
   .sequence-strip {
-    grid-template-columns: repeat(var(--slot-mobile-columns, 2), minmax(120px, 1fr));
+    grid-template-columns: repeat(var(--slot-mobile-columns, 2), minmax(96px, 1fr));
   }
 
   .brand__hint {
@@ -174,13 +174,16 @@
     padding-top: 8px;
   }
 
-  .card-grid,
   .topbar__stats {
     display: grid;
     grid-template-columns: 1fr;
   }
 
+  .card-grid {
+    grid-template-columns: repeat(var(--card-mobile-columns, 2), minmax(96px, 1fr));
+  }
+
   .sequence-strip {
-    grid-template-columns: repeat(var(--slot-mobile-columns, 2), minmax(120px, 1fr));
+    grid-template-columns: repeat(var(--slot-mobile-columns, 2), minmax(96px, 1fr));
   }
 }

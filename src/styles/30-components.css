@@ -141,6 +141,12 @@
   overflow: visible;
 }
 
+.chord-card {
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
 .chord-card:hover {
   transform: translateY(-2px) rotate(-1deg);
 }
@@ -311,6 +317,72 @@
 
 .is-dragging {
   cursor: grabbing;
+}
+
+@media (max-width: 760px) {
+  .slot {
+    min-height: 148px;
+    border-radius: 22px;
+  }
+
+  .slot__index {
+    width: 28px;
+    height: 28px;
+    font-size: 0.82rem;
+  }
+
+  .chord-card,
+  .drag-ghost {
+    min-height: 136px;
+    padding: 12px;
+    border-radius: 20px;
+  }
+
+  .chord-card__numeral {
+    font-size: 0.7rem;
+  }
+
+  .chord-card strong {
+    font-size: 1.2rem;
+  }
+
+  .chord-card small {
+    font-size: 0.76rem;
+  }
+
+  .chord-card__glyph {
+    font-size: 2.6rem;
+  }
+}
+
+@media (max-width: 560px) {
+  .slot {
+    min-height: 134px;
+    padding: 7px;
+  }
+
+  .slot__body {
+    height: calc(100% - 34px);
+    margin-top: 6px;
+  }
+
+  .chord-card,
+  .drag-ghost {
+    min-height: 120px;
+    padding: 10px;
+  }
+
+  .chord-card strong {
+    font-size: 1.02rem;
+  }
+
+  .chord-card small {
+    font-size: 0.68rem;
+  }
+
+  .chord-card__glyph {
+    font-size: 2.2rem;
+  }
 }
 
 @keyframes card-wiggle {

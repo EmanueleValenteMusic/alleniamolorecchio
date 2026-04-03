@@ -37,9 +37,30 @@ body {
   color: var(--text);
   font-family: "Avenir Next Rounded", "Trebuchet MS", "Chalkboard SE", sans-serif;
   transition: background 220ms ease;
+  touch-action: manipulation;
+  -webkit-text-size-adjust: 100%;
+}
+
+body.is-dragging {
+  overflow: hidden;
+  touch-action: none;
+  overscroll-behavior: none;
+}
+
+.app-signature {
+  position: fixed;
+  left: 14px;
+  bottom: 10px;
+  z-index: 1;
+  font-size: 0.8rem;
+  color: rgba(99, 70, 58, 0.42);
+  pointer-events: none;
+  user-select: none;
 }
 
 select,
 button {
   color: inherit;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }

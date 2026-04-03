@@ -140,12 +140,13 @@ export function renderApp(state: AppState): string {
 
       ${showCardsPanel ? `
       <section class="panel cards-panel">
-        <div class="card-grid">
+        <div class="card-grid" style="--card-mobile-columns:${getBalancedCardColumns(visibleOptions.length)};">
           ${visibleOptions.map((chord, index) => renderPaletteCard(state, chord, index)).join('')}
         </div>
       </section>
       ` : ''}
     </main>
+    <div class="app-signature" aria-hidden="true">© Emanuele Valente</div>
   `;
 }
 
@@ -289,6 +290,14 @@ function getBalancedSlotColumns(slotCount: number): number {
 
 function getIntervalAnswerColumns(answerCount: number): number {
   return Math.min(answerCount >= 7 ? 4 : answerCount, 4);
+}
+
+function getBalancedCardColumns(cardCount: number): number {
+  if (cardCount <= 0) {
+    return 1;
+  }
+
+  return cardCount <= 4 ? cardCount : Math.ceil(cardCount / 2);
 }
 
 function getPrimaryActionLabel(state: AppState): string {

@@ -54,11 +54,23 @@
   cursor: pointer;
 }
 
-.pill--play {
+.pill--question {
   background: var(--yellow);
 }
 
-.pill--soft {
+.pill--answer {
+  background: var(--sky);
+}
+
+.pill--check {
+  background: var(--mint);
+}
+
+.pill--reset {
+  background: var(--peach);
+}
+
+.pill--new {
   background: var(--lavender);
 }
 
@@ -131,6 +143,23 @@
 
 .chord-card:hover {
   transform: translateY(-2px) rotate(-1deg);
+}
+
+.interval-choice {
+  cursor: pointer;
+}
+
+.interval-choice--selected {
+  border-color: var(--lavender);
+  box-shadow: 0 0 0 4px rgba(216, 204, 255, 0.45), var(--shadow);
+}
+
+.interval-choice--correct {
+  border-color: var(--good);
+}
+
+.interval-choice--wrong {
+  border-color: var(--bad);
 }
 
 .chord-card--tapped {
@@ -215,6 +244,30 @@
 .feedback--error {
   background: #fff0ef;
   border-color: var(--bad);
+}
+
+.interval-intro {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.interval-intro p {
+  margin: 0;
+  color: var(--text-soft);
+}
+
+.interval-intro__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--yellow);
+  border: 3px solid var(--stroke);
+  box-shadow: var(--shadow);
+  font-weight: 800;
 }
 
 .drag-ghost {

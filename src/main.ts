@@ -2,7 +2,19 @@ import { PianoEngine } from './audio/piano';
 import { computeScoreBreakdown, getMistakePenalty } from './app/scoring';
 import { createRound, evaluatePlacements } from './app/rounds';
 import { clampSlotCount, loadScore, loadSettings, persistScore, persistSettings } from './app/storage';
-import type { AppState, ChordOption, DragState, FeedbackTone, PlaybackMode, PlayMode, ScaleFamily, SettingsState } from './app/types';
+import type {
+  AppState,
+  ChordOption,
+  DragState,
+  FeedbackTone,
+  IntervalDirection,
+  IntervalPlaybackModeSetting,
+  IntervalType,
+  PlaybackMode,
+  PlayMode,
+  ScaleFamily,
+  SettingsState
+} from './app/types';
 import { syncLiveUi } from './ui/live';
 import { renderApp } from './ui/templates';
 
@@ -51,6 +63,10 @@ function bindUi(): void {
     void playSequence();
   });
 
+  appRoot.querySelector('[data-action="play-answer"]')?.addEventListener('click', () => {
+    void playAnswer();
+  });
+
   appRoot.querySelector('[data-action="check-answer"]')?.addEventListener('click', () => {
     checkAnswer();
   });
@@ -78,8 +94,14 @@ function bindUi(): void {
     select.addEventListener('change', handleSettingsChange);
   });
 
-  appRoot.querySelectorAll<HTMLElement>('.chord-card').forEach((card) => {
+  appRoot.querySelectorAll<HTMLElement>('.chord-card[data-source]').forEach((card) => {
     card.addEventListener('pointerdown', handleCardPointerDown);
+  });
+
+  appRoot.querySelectorAll<HTMLButtonElement>('[data-action="choose-interval-answer"]').forEach((button) => {
+    button.addEventListener('click', () => {
+      chooseIntervalAnswer(button.dataset.answerId ?? '', button);
+    });
   });
 }
 
@@ -92,11 +114,17 @@ function handleSettingsChange(): void {
   const scaleFamilyValue = appRoot.querySelector<HTMLSelectElement>('[data-setting="scale-family"]')?.value;
   const playModeValue = appRoot.querySelector<HTMLSelectElement>('[data-setting="play-mode"]')?.value;
   const playbackModeValue = appRoot.querySelector<HTMLSelectElement>('[data-setting="playback-mode"]')?.value;
+  const intervalTypeValue = appRoot.querySelector<HTMLSelectElement>('[data-setting="interval-type"]')?.value;
+  const intervalPlaybackModeValue = appRoot.querySelector<HTMLSelectElement>('[data-setting="interval-playback-mode"]')?.value;
+  const intervalDirectionValue = appRoot.querySelector<HTMLSelectElement>('[data-setting="interval-direction"]')?.value;
   const nextSettings: SettingsState = {
     slotCount: clampSlotCount(Number(slotCountValue)),
     scaleFamily: isScaleFamily(scaleFamilyValue) ? scaleFamilyValue : 'maggiore',
     playMode: isPlayMode(playModeValue) ? playModeValue : 'triadi',
-    playbackMode: playbackModeValue === 'melodico' ? 'melodico' : 'armonico'
+    playbackMode: playbackModeValue === 'melodico' ? 'melodico' : 'armonico',
+    intervalType: isIntervalType(intervalTypeValue) ? intervalTypeValue : '2ª',
+    intervalPlaybackMode: isIntervalPlaybackMode(intervalPlaybackModeValue) ? intervalPlaybackModeValue : 'armonico',
+    intervalDirection: intervalDirectionValue === 'discendente' ? 'discendente' : 'ascendente'
   };
 
   if (nextSettings.playMode === 'nota singola') {
@@ -108,6 +136,9 @@ function handleSettingsChange(): void {
     && nextSettings.scaleFamily === state.settings.scaleFamily
     && nextSettings.playMode === state.settings.playMode
     && nextSettings.playbackMode === state.settings.playbackMode
+    && nextSettings.intervalType === state.settings.intervalType
+    && nextSettings.intervalPlaybackMode === state.settings.intervalPlaybackMode
+    && nextSettings.intervalDirection === state.settings.intervalDirection
   ) {
     return;
   }
@@ -192,6 +223,7 @@ function handlePointerUp(event: PointerEvent): void {
   }
 
   state.round.lastCheckResults = Array.from({ length: state.round.slotCount }, () => null);
+  clearPlacementHintIfNeeded();
   cleanupDrag();
   render();
 }
@@ -252,6 +284,15 @@ async function previewChord(degree: number, source?: HTMLElement): Promise<void>
 }
 
 async function playSequence(): Promise<void> {
+  if (state.settings.playMode === 'intervalli') {
+    if (state.round.solved || state.round.locked) {
+      startNewRound('');
+    }
+
+    await playIntervalQuestion();
+    return;
+  }
+
   if (state.round.solved) {
     startNewRound('');
   }
@@ -299,7 +340,224 @@ async function playSequence(): Promise<void> {
   }, Math.ceil((state.round.slotCount * spacing + 0.4) * 1000));
 }
 
+async function playIntervalQuestion(): Promise<void> {
+  if (state.isPlaying) {
+    return;
+  }
+
+  const question = state.round.intervalQuestion;
+  if (!question) {
+    return;
+  }
+
+  const ready = await piano.ensureReady();
+  state.audioReady = ready;
+  if (!ready) {
+    setFeedback('Audio non disponibile', 'error');
+    return;
+  }
+
+  clearPendingTimers();
+  state.isPlaying = true;
+  state.round.sequencePlayCount += 1;
+  syncLiveUi(appRoot, state);
+
+  const startAt = piano.currentTime + 0.08;
+  const currentRoundId = state.round.id;
+  const durationMs = playIntervalPrompt(question, startAt);
+  pulseSequenceBackground(durationMs);
+
+  playbackTimerId = window.setTimeout(() => {
+    if (state.round.id !== currentRoundId) {
+      return;
+    }
+
+    state.isPlaying = false;
+    state.round.sequenceFinishedAt = Date.now();
+    if (state.round.answerWindowStartedAt === null) {
+      state.round.answerWindowStartedAt = state.round.sequenceFinishedAt;
+    }
+
+    syncLiveUi(appRoot, state);
+  }, durationMs);
+}
+
+async function playAnswer(): Promise<void> {
+  if (state.settings.playMode === 'intervalli') {
+    return;
+  }
+
+  if (state.isPlaying) {
+    return;
+  }
+
+  const chosenPlacements = state.round.placements.flatMap((degree, slotIndex) => {
+    if (degree === null) {
+      return [];
+    }
+
+    return [{ degree, slotIndex }];
+  });
+
+  if (chosenPlacements.length === 0) {
+    setFeedback('Inserisci almeno uno slot', 'info');
+    return;
+  }
+
+  const ready = await piano.ensureReady();
+  state.audioReady = ready;
+  if (!ready) {
+    setFeedback('Audio non disponibile', 'error');
+    return;
+  }
+
+  clearPendingTimers();
+  state.isPlaying = true;
+  syncLiveUi(appRoot, state);
+
+  const spacing = getSequenceStep(state.settings.playMode, state.settings.playbackMode);
+  const startAt = piano.currentTime + 0.08;
+  const currentRoundId = state.round.id;
+  const durationMs = Math.ceil((chosenPlacements.length * spacing + 0.4) * 1000);
+  pulseSequenceBackground(durationMs);
+  animateAnswerSlots(chosenPlacements, spacing, currentRoundId);
+
+  chosenPlacements.forEach(({ degree }, index) => {
+    playOption(state.round.options[degree], state.settings.playMode, state.settings.playbackMode, {
+      preview: false,
+      when: startAt + index * spacing
+    });
+  });
+
+  playbackTimerId = window.setTimeout(() => {
+    if (state.round.id !== currentRoundId) {
+      return;
+    }
+
+    state.isPlaying = false;
+    syncLiveUi(appRoot, state);
+  }, durationMs);
+}
+
+function chooseIntervalAnswer(answerId: string, source: HTMLElement): void {
+  if (!answerId || state.isPlaying || state.round.locked || state.round.solved) {
+    return;
+  }
+
+  const question = state.round.intervalQuestion;
+  if (!question) {
+    return;
+  }
+
+  state.round.selectedAnswerId = answerId;
+  if (state.feedback === 'Scegli una risposta' && state.feedbackTone === 'info') {
+    setFeedback('', 'idle');
+  }
+
+  animateCardTap(source, getCardAccent(question.answerOptions.findIndex((option) => option.id === answerId)));
+  render();
+  void previewIntervalAnswer(answerId);
+}
+
+async function previewIntervalAnswer(answerId: string): Promise<void> {
+  const question = state.round.intervalQuestion;
+  if (!question) {
+    return;
+  }
+
+  const answer = question.answerOptions.find((option) => option.id === answerId);
+  const answerIndex = question.answerOptions.findIndex((option) => option.id === answerId);
+  if (!answer) {
+    return;
+  }
+
+  const ready = await piano.ensureReady();
+  state.audioReady = ready;
+  if (!ready) {
+    setFeedback('Audio non disponibile', 'error');
+    return;
+  }
+
+  clearPendingTimers();
+  state.isPlaying = true;
+  syncLiveUi(appRoot, state);
+
+  const previewQuestion = {
+    ...question,
+    midi: buildIntervalMidi(question.baseMidi, answer.semitones, question.playbackMode, question.direction)
+  };
+  const currentRoundId = state.round.id;
+  const startAt = piano.currentTime + 0.01;
+  const durationMs = playIntervalPrompt(previewQuestion, startAt);
+  pulseCardBackground(getCardAccent(answerIndex), durationMs);
+  startBackdropNotes(durationMs);
+
+  playbackTimerId = window.setTimeout(() => {
+    if (state.round.id !== currentRoundId) {
+      return;
+    }
+
+    state.isPlaying = false;
+    syncLiveUi(appRoot, state);
+  }, durationMs);
+}
+
+function finalizeIntervalAnswer(answerId: string): void {
+  const question = state.round.intervalQuestion;
+  if (!question) {
+    return;
+  }
+
+  if (!state.round.counted) {
+    state.score.roundsPlayed += 1;
+    state.round.counted = true;
+  }
+
+  state.round.selectedAnswerId = answerId;
+  const correct = answerId === question.correctAnswerId;
+
+  if (correct) {
+    const breakdown = computeScoreBreakdown(state.round, state.settings);
+    state.score.totalPoints = Math.max(0, state.score.totalPoints + breakdown.earned);
+    state.score.streak += 1;
+    state.score.bestStreak = Math.max(state.score.bestStreak, state.score.streak);
+    state.score.roundsSolved += 1;
+    state.round.solved = true;
+    persistScore(state.score);
+    setFeedback(`+${breakdown.earned}`, 'success');
+    render();
+    return;
+  }
+
+  state.round.attempts += 1;
+  state.round.locked = true;
+  state.score.streak = 0;
+  state.score.totalPoints = Math.max(0, state.score.totalPoints - getMistakePenalty(state.round));
+  persistScore(state.score);
+  const correctLabel = question.answerOptions.find((option) => option.id === question.correctAnswerId)?.label ?? 'Risposta corretta';
+  setFeedback(`Era ${correctLabel}`, 'error');
+  render();
+}
+
+function checkIntervalAnswer(): void {
+  if (state.isPlaying || state.round.locked || state.round.solved) {
+    return;
+  }
+
+  if (!state.round.selectedAnswerId) {
+    setFeedback('Scegli una risposta', 'info');
+    return;
+  }
+
+  finalizeIntervalAnswer(state.round.selectedAnswerId);
+}
+
 function checkAnswer(): void {
+  if (state.settings.playMode === 'intervalli') {
+    checkIntervalAnswer();
+    return;
+  }
+
   if (state.isPlaying) {
     return;
   }
@@ -364,6 +622,18 @@ function setFeedback(message: string, tone: FeedbackTone): void {
   state.feedback = message;
   state.feedbackTone = tone;
   syncLiveUi(appRoot, state);
+}
+
+function clearPlacementHintIfNeeded(): void {
+  if (state.feedback !== 'Inserisci almeno uno slot' || state.feedbackTone !== 'info') {
+    return;
+  }
+
+  if (state.round.placements.every((degree) => degree === null)) {
+    return;
+  }
+
+  setFeedback('', 'idle');
 }
 
 function clearPendingTimers(): void {
@@ -434,7 +704,31 @@ function resetPlaybackBackdrop(): void {
 }
 
 function getCardAccent(degree: number): string {
-  return CARD_ACCENTS[degree % CARD_ACCENTS.length];
+  const safeIndex = degree >= 0 ? degree : 0;
+  return CARD_ACCENTS[safeIndex % CARD_ACCENTS.length];
+}
+
+function playIntervalPrompt(question: NonNullable<AppState['round']['intervalQuestion']>, startAt: number): number {
+  if (question.playbackMode === 'armonico') {
+    piano.playSingle(question.midi[0], { when: startAt, duration: 1.02, velocity: 0.34 });
+    piano.playSingle(question.midi[1], { when: startAt, duration: 1.02, velocity: 0.34 });
+    return 1180;
+  }
+
+  piano.playSingle(question.midi[0], { when: startAt, duration: 0.78, velocity: 0.34 });
+  piano.playSingle(question.midi[1], { when: startAt + 0.64, duration: 0.78, velocity: 0.34 });
+  return 1880;
+}
+
+function buildIntervalMidi(baseMidi: number, semitones: number, playbackMode: PlaybackMode, direction: IntervalDirection): number[] {
+  const lowMidi = baseMidi;
+  const highMidi = baseMidi + semitones;
+
+  if (playbackMode === 'melodico' && direction === 'discendente') {
+    return [highMidi, lowMidi];
+  }
+
+  return [lowMidi, highMidi];
 }
 
 function playOption(
@@ -507,6 +801,23 @@ function animateCardTap(source: HTMLElement | undefined, accent: string): void {
   });
 }
 
+function animateAnswerSlots(
+  chosenPlacements: Array<{ degree: number; slotIndex: number }>,
+  spacing: number,
+  roundId: number
+): void {
+  chosenPlacements.forEach(({ degree, slotIndex }, index) => {
+    window.setTimeout(() => {
+      if (state.round.id !== roundId) {
+        return;
+      }
+
+      const slotCard = appRoot.querySelector<HTMLElement>(`[data-slot-index="${slotIndex}"] .chord-card`);
+      animateCardTap(slotCard ?? undefined, getCardAccent(degree));
+    }, Math.round((0.08 + index * spacing) * 1000));
+  });
+}
+
 function startBackdropNotes(durationMs: number): void {
   const backdrop = getPlaybackBackdrop();
   if (!backdrop) {
@@ -562,7 +873,24 @@ function isScaleFamily(value: string | undefined): value is ScaleFamily {
 }
 
 function isPlayMode(value: string | undefined): value is PlayMode {
-  return value === 'nota singola' || value === 'triadi' || value === 'quadriadi';
+  return value === 'intervalli' || value === 'nota singola' || value === 'triadi' || value === 'quadriadi';
+}
+
+function isIntervalType(value: string | undefined): value is IntervalType {
+  return value === '2ª'
+    || value === '3ª'
+    || value === '4ª'
+    || value === '5ª'
+    || value === '6ª'
+    || value === '7ª'
+    || value === '5ª, 4ª, 8ª'
+    || value === '9ª'
+    || value === 'Scala maggiore'
+    || value === 'Scala cromatica';
+}
+
+function isIntervalPlaybackMode(value: string | undefined): value is IntervalPlaybackModeSetting {
+  return value === 'armonico' || value === 'melodico' || value === 'entrambi';
 }
 
 function lightenHex(hex: string, amount: number): string {

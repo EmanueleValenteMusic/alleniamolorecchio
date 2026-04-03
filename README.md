@@ -1,6 +1,6 @@
-# Progressioni armoniche
+# Alleniamo l'orecchio
 
-Quiz didattico offline per allenare il riconoscimento di progressioni di triadi di una scala maggiore.
+Scegli la modalità che preferisci per allenare il tuo orecchio musicale.
 
 ## Uso immediato
 

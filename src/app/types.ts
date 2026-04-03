@@ -1,9 +1,30 @@
 export type ScaleFamily = 'maggiore' | 'minore naturale' | 'minore armonica' | 'minore melodica';
-export type PlayMode = 'nota singola' | 'triadi' | 'quadriadi';
+export type PlayMode = 'intervalli' | 'nota singola' | 'triadi' | 'quadriadi';
 export type PlaybackMode = 'armonico' | 'melodico';
+export type IntervalType = '2ª' | '3ª' | '4ª' | '5ª' | '6ª' | '7ª' | '5ª, 4ª, 8ª' | '9ª' | 'Scala maggiore' | 'Scala cromatica';
+export type IntervalPlaybackModeSetting = 'armonico' | 'melodico' | 'entrambi';
+export type IntervalDirection = 'ascendente' | 'discendente';
 export type FeedbackTone = 'idle' | 'success' | 'error' | 'info';
 export type DragSource = 'palette' | 'slot';
 export type SlotResult = 'correct' | 'wrong' | null;
+
+export interface IntervalAnswerOption {
+  id: string;
+  label: string;
+  shortLabel: string;
+  semitones: number;
+}
+
+export interface IntervalQuestion {
+  family: IntervalType;
+  answerOptions: IntervalAnswerOption[];
+  correctAnswerId: string;
+  notes: string[];
+  midi: number[];
+  baseMidi: number;
+  playbackMode: PlaybackMode;
+  direction: IntervalDirection;
+}
 
 export interface ScaleDefinition {
   key: string;
@@ -32,6 +53,9 @@ export interface SettingsState {
   scaleFamily: ScaleFamily;
   playMode: PlayMode;
   playbackMode: PlaybackMode;
+  intervalType: IntervalType;
+  intervalPlaybackMode: IntervalPlaybackModeSetting;
+  intervalDirection: IntervalDirection;
 }
 
 export interface ScoreState {
@@ -44,7 +68,7 @@ export interface ScoreState {
 
 export interface RoundState {
   id: number;
-  scale: ScaleDefinition;
+  scale: ScaleDefinition | null;
   options: ChordOption[];
   solution: number[];
   placements: Array<number | null>;
@@ -60,6 +84,8 @@ export interface RoundState {
   cardPreviewCount: number;
   answerWindowStartedAt: number | null;
   sequenceFinishedAt: number | null;
+  intervalQuestion: IntervalQuestion | null;
+  selectedAnswerId: string | null;
 }
 
 export interface AppState {

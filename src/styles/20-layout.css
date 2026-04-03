@@ -108,6 +108,17 @@
   align-items: stretch;
 }
 
+.board-panel--interval {
+  display: grid;
+  gap: 12px;
+}
+
+.interval-answer-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--interval-answer-columns, 2), minmax(160px, 1fr));
+  gap: 12px;
+}
+
 .card-grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -122,6 +133,10 @@
   .card-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
+
+  .interval-answer-grid {
+    grid-template-columns: repeat(min(var(--interval-answer-columns, 2), 2), minmax(160px, 1fr));
+  }
 }
 
 @media (max-width: 760px) {
@@ -134,6 +149,10 @@
 
   .card-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .interval-answer-grid {
+    grid-template-columns: 1fr;
   }
 
   .sequence-strip {

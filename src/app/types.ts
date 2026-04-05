@@ -5,6 +5,7 @@ export type IntervalType = '2ª' | '3ª' | '4ª' | '5ª' | '6ª' | '7ª' | '5ª,
 export type IntervalPlaybackModeSetting = 'armonico' | 'melodico' | 'entrambi';
 export type IntervalDirection = 'ascendente' | 'discendente';
 export type OrderingDirection = 'ascendente' | 'discendente';
+export type SoundTimbre = 'piano' | 'glass' | 'reed' | 'organ' | 'chip' | 'hollow' | 'buzz';
 export type FeedbackTone = 'idle' | 'success' | 'error' | 'info';
 export type DragSource = 'palette' | 'slot';
 export type SlotResult = 'correct' | 'wrong' | null;
@@ -13,6 +14,7 @@ export interface OrderingChallenge {
   kind: 'altezza' | 'durata' | 'intensita';
   direction: OrderingDirection;
   prompt: string;
+  timbre: SoundTimbre;
 }
 
 export interface IntervalAnswerOption {
@@ -57,6 +59,8 @@ export interface ChordOption {
   playVelocity?: number;
   sequenceGap?: number;
   sortRank?: number;
+  soundTimbre?: SoundTimbre;
+  useFlatEnvelope?: boolean;
 }
 
 export interface SettingsState {

@@ -9,6 +9,7 @@ import type {
   PlayMode,
   RoundState,
   ScaleDefinition,
+  SoundTimbre,
   SettingsState,
   SlotResult
 } from './types';
@@ -28,6 +29,7 @@ const QUALITY_SUFFIX: Record<string, string> = {
 };
 
 let roundIdSeed = 0;
+const ORDERING_TIMBRES: SoundTimbre[] = ['glass', 'reed', 'organ', 'chip', 'hollow', 'buzz'];
 
 const CHROMATIC_NOTES = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
 
@@ -299,12 +301,14 @@ function formatNoteName(midi: number): string {
 
 function createOrderingChallenge(playMode: Extract<PlayMode, 'altezza' | 'durata' | 'intensita'>): OrderingChallenge {
   const direction = sample<OrderingChallenge['direction']>(['ascendente', 'discendente']);
+  const timbre = sample(ORDERING_TIMBRES);
 
   if (playMode === 'altezza') {
     return {
       kind: playMode,
       direction,
-      prompt: direction === 'ascendente' ? 'Ordina dal più grave al più acuto' : 'Ordina dal più acuto al più grave'
+      prompt: direction === 'ascendente' ? 'Ordina dal più grave al più acuto' : 'Ordina dal più acuto al più grave',
+      timbre
     };
   }
 
@@ -312,14 +316,16 @@ function createOrderingChallenge(playMode: Extract<PlayMode, 'altezza' | 'durata
     return {
       kind: playMode,
       direction,
-      prompt: direction === 'ascendente' ? 'Ordina dal più corto al più lungo' : 'Ordina dal più lungo al più corto'
+      prompt: direction === 'ascendente' ? 'Ordina dal più corto al più lungo' : 'Ordina dal più lungo al più corto',
+      timbre
     };
   }
 
   return {
     kind: playMode,
     direction,
-    prompt: direction === 'ascendente' ? 'Ordina dal più piano al più forte' : 'Ordina dal più forte al più piano'
+    prompt: direction === 'ascendente' ? 'Ordina dal più piano al più forte' : 'Ordina dal più forte al più piano',
+    timbre
   };
 }
 
@@ -339,7 +345,8 @@ function buildOrderingOptions(slotCount: number, challenge: OrderingChallenge): 
       playDuration: 0.82,
       playVelocity: 0.34,
       sequenceGap: 0.9,
-      sortRank: index
+      sortRank: index,
+      soundTimbre: challenge.timbre
     }));
   }
 
@@ -357,7 +364,9 @@ function buildOrderingOptions(slotCount: number, challenge: OrderingChallenge): 
       playDuration: baseDuration + index * 0.5,
       playVelocity: 0.34,
       sequenceGap: baseDuration + index * 0.5 + 0.24,
-      sortRank: index
+      sortRank: index,
+      soundTimbre: challenge.timbre,
+      useFlatEnvelope: true
     }));
   }
 
@@ -373,7 +382,8 @@ function buildOrderingOptions(slotCount: number, challenge: OrderingChallenge): 
     playDuration: 0.82,
     playVelocity: Math.min(0.92, 0.12 + index * 0.11),
     sequenceGap: 0.9,
-    sortRank: index
+    sortRank: index,
+    soundTimbre: challenge.timbre
   }));
 }
 

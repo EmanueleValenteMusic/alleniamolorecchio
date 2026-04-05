@@ -772,7 +772,13 @@ function playOption(
   if (playMode === 'altezza' || playMode === 'durata' || playMode === 'intensita') {
     const duration = option.playDuration ?? 0.82;
     const velocity = option.playVelocity ?? 0.34;
-    piano.playSingle(option.midi[0], { when, duration, velocity });
+    piano.playSingle(option.midi[0], {
+      when,
+      duration,
+      velocity,
+      timbre: option.soundTimbre,
+      flatEnvelope: option.useFlatEnvelope
+    });
     return duration;
   }
 

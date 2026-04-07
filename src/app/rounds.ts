@@ -115,7 +115,7 @@ export function createRound(settings: SettingsState): RoundState {
 
   const familyScales = SCALES.filter((scale) => scale.family === settings.scaleFamily);
   const scale = sample(familyScales);
-  const options = buildOptions(scale, settings.playMode);
+  const options = buildOptions(scale, settings.playMode, settings.noteNaming);
   const solution = generateSolution(options.length, settings.slotCount);
   roundIdSeed += 1;
 
@@ -143,7 +143,7 @@ export function createRound(settings: SettingsState): RoundState {
   };
 }
 
-export function buildOptions(scale: ScaleDefinition, playMode: PlayMode): ChordOption[] {
+export function buildOptions(scale: ScaleDefinition, playMode: PlayMode, noteNaming: 'ita' | 'eng' = 'eng'): ChordOption[] {
   const stackSize = playMode === 'quadriadi' ? 4 : 1;
   const effectiveStackSize = playMode === 'triadi' ? 3 : stackSize;
   const qualities = playMode === 'quadriadi' ? scale.tetradQualities : scale.triadQualities;
@@ -156,10 +156,13 @@ export function buildOptions(scale: ScaleDefinition, playMode: PlayMode): ChordO
       const octaveOffset = Math.floor(diatonicIndex / 7) * 12;
       return scale.tonicMidi + scale.semitones[wrappedIndex] + octaveOffset;
     });
-
-    const notes = Array.from({ length: effectiveStackSize }, (_, noteIndex) => scale.notes[(degree + noteIndex * 2) % 7]);
+    const notes = Array.from({ length: effectiveStackSize }, (_, noteIndex) => {
+      const raw = scale.notes[(degree + noteIndex * 2) % 7];
+      return noteNaming === 'ita' ? mapNoteNameToIta(raw) : raw;
+    });
     const quality = playMode === 'nota singola' ? '' : qualities[degree];
-    const symbol = playMode === 'nota singola' ? rootName : `${rootName}${QUALITY_SUFFIX[quality] ?? ` ${quality}`}`;
+    const mappedRoot = noteNaming === 'ita' ? mapNoteNameToIta(rootName) : rootName;
+    const symbol = playMode === 'nota singola' ? mappedRoot : `${mappedRoot}${QUALITY_SUFFIX[quality] ?? ` ${quality}`}`;
 
     return {
       degree,
@@ -245,7 +248,7 @@ function createIntervalRound(settings: SettingsState): RoundState {
       family: settings.intervalType,
       answerOptions,
       correctAnswerId: correctAnswer.id,
-      notes: midi.map(formatNoteName),
+      notes: midi.map((m) => formatNoteName(m, settings.noteNaming)),
       midi,
       baseMidi: lowMidi,
       playbackMode,
@@ -297,7 +300,7 @@ function createTriadTypeRound(settings: SettingsState): RoundState {
       correctQuality,
       rootMidi,
       midi,
-      notes: midi.map(formatNoteName),
+      notes: midi.map((m) => formatNoteName(m, settings.noteNaming)),
       playbackMode: settings.playbackMode
     },
     selectedAnswerId: null,
@@ -363,7 +366,7 @@ function createTetradTypeRound(settings: SettingsState): RoundState {
       correctQuality,
       rootMidi,
       midi,
-      notes: midi.map(formatNoteName),
+      notes: midi.map((m) => formatNoteName(m, settings.noteNaming)),
       playbackMode: settings.playbackMode
     },
     selectedAnswerId: null,
@@ -419,8 +422,25 @@ function sample<T>(items: T[]): T {
   return items[Math.floor(Math.random() * items.length)];
 }
 
-function formatNoteName(midi: number): string {
-  return CHROMATIC_NOTES[midi % 12];
+const CHROMATIC_NOTES_ITA = ['Do', 'Do#', 'Re', 'Mib', 'Mi', 'Fa', 'Fa#', 'Sol', 'Lab', 'La', 'Sib', 'Si'];
+
+function mapNoteNameToIta(note: string): string {
+  const MAP: Record<string, string> = {
+    'C': 'Do', 'C#': 'Do#', 'Db': 'Reb',
+    'D': 'Re', 'D#': 'Re#', 'Eb': 'Mib',
+    'E': 'Mi', 'Fb': 'Mi', 'E#': 'Fa',
+    'F': 'Fa', 'F#': 'Fa#', 'Gb': 'Solb',
+    'G': 'Sol', 'G#': 'Sol#', 'Ab': 'Lab',
+    'A': 'La', 'A#': 'La#', 'Bb': 'Sib',
+    'B': 'Si', 'Cb': 'Si'
+  };
+
+  return MAP[note] ?? note;
+}
+
+function formatNoteName(midi: number, naming: 'ita' | 'eng' = 'eng'): string {
+  const idx = midi % 12;
+  return naming === 'eng' ? CHROMATIC_NOTES[idx] : CHROMATIC_NOTES_ITA[idx];
 }
 
 function createOrderingChallenge(playMode: Extract<PlayMode, 'altezza' | 'durata' | 'intensita'>): OrderingChallenge {

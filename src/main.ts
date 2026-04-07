@@ -128,6 +128,7 @@ function handleSettingsChange(): void {
   const intervalTypeValue = appRoot.querySelector<HTMLSelectElement>('[data-setting="interval-type"]')?.value;
   const intervalPlaybackModeValue = appRoot.querySelector<HTMLSelectElement>('[data-setting="interval-playback-mode"]')?.value;
   const intervalDirectionValue = appRoot.querySelector<HTMLSelectElement>('[data-setting="interval-direction"]')?.value;
+  const noteNamingValue = appRoot.querySelector<HTMLSelectElement>('[data-setting="note-naming"]')?.value;
   const nextSettings: SettingsState = {
     slotCount: clampSlotCount(Number(slotCountValue)),
     scaleFamily: isScaleFamily(scaleFamilyValue) ? scaleFamilyValue : 'maggiore',
@@ -136,6 +137,7 @@ function handleSettingsChange(): void {
     intervalType: isIntervalType(intervalTypeValue) ? intervalTypeValue : '2ª',
     intervalPlaybackMode: isIntervalPlaybackMode(intervalPlaybackModeValue) ? intervalPlaybackModeValue : 'armonico',
     intervalDirection: intervalDirectionValue === 'discendente' ? 'discendente' : 'ascendente'
+    ,noteNaming: noteNamingValue === 'eng' ? 'eng' : 'ita'
   };
 
   if (nextSettings.playMode === 'nota singola') {
@@ -150,6 +152,7 @@ function handleSettingsChange(): void {
     && nextSettings.intervalType === state.settings.intervalType
     && nextSettings.intervalPlaybackMode === state.settings.intervalPlaybackMode
     && nextSettings.intervalDirection === state.settings.intervalDirection
+    && nextSettings.noteNaming === state.settings.noteNaming
   ) {
     return;
   }

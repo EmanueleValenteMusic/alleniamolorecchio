@@ -3,6 +3,7 @@ export type PlayMode = 'intervalli' | 'altezza' | 'durata' | 'intensita' | 'nota
 export type TriadQuality = 'maggiore' | 'minore' | 'diminuita' | 'aumentata';
 export type TetradQuality = 'maj7' | 'm7' | '7' | 'm7b5' | 'mMaj7' | 'maj7#5' | 'dim7';
 export type PlaybackMode = 'armonico' | 'melodico';
+export type NoteNaming = 'ita' | 'eng';
 export type IntervalType = '2ª' | '3ª' | '4ª' | '5ª' | '6ª' | '7ª' | '5ª, 4ª, 8ª' | '9ª' | 'Scala maggiore' | 'Scala cromatica';
 export type IntervalPlaybackModeSetting = 'armonico' | 'melodico' | 'entrambi';
 export type IntervalDirection = 'ascendente' | 'discendente';
@@ -89,6 +90,7 @@ export interface SettingsState {
   intervalType: IntervalType;
   intervalPlaybackMode: IntervalPlaybackModeSetting;
   intervalDirection: IntervalDirection;
+  noteNaming: NoteNaming;
 }
 
 export interface ScoreState {

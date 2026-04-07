@@ -11,6 +11,7 @@ const DEFAULT_SETTINGS: SettingsState = {
   intervalType: '2ª',
   intervalPlaybackMode: 'armonico',
   intervalDirection: 'ascendente'
+  ,noteNaming: 'ita'
 };
 
 export function loadSettings(): SettingsState {
@@ -34,7 +35,8 @@ export function loadSettings(): SettingsState {
       intervalPlaybackMode: parsed.intervalPlaybackMode === 'melodico' || parsed.intervalPlaybackMode === 'entrambi'
         ? parsed.intervalPlaybackMode
         : 'armonico',
-      intervalDirection: parsed.intervalDirection === 'discendente' ? 'discendente' : 'ascendente'
+      intervalDirection: parsed.intervalDirection === 'discendente' ? 'discendente' : 'ascendente',
+      noteNaming: parsed.noteNaming === 'eng' ? 'eng' : 'ita'
     };
   } catch {
     return DEFAULT_SETTINGS;

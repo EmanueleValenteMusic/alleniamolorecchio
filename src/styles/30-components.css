@@ -36,6 +36,10 @@
   background: #fff;
 }
 
+.mini-control--note {
+  margin-left: auto;
+}
+
 .mini-control span {
   font-size: 0.8rem;
   color: var(--text-soft);

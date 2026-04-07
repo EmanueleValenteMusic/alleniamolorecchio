@@ -137,6 +137,13 @@ export function renderApp(state: AppState): string {
               </label>
             `}
           `}
+            <label class="mini-control mini-control--note">
+              <span>Note</span>
+              <select data-setting="note-naming">
+                <option value="ita" ${state.settings.noteNaming === 'ita' ? 'selected' : ''}>Ita</option>
+                <option value="eng" ${state.settings.noteNaming === 'eng' ? 'selected' : ''}>Eng</option>
+              </select>
+            </label>
         </div>
         <div class="controls-panel__row controls-panel__row--actions">
           ${hideQuestionButton ? '' : `<button class="pill pill--question" data-role="play-sequence" data-action="play-sequence">${primaryActionLabel}</button>`}

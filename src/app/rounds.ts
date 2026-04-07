@@ -60,9 +60,9 @@ const INTERVAL_OPTION_SETS: Record<IntervalType, IntervalAnswerOption[]> = {
     { id: 'm7', label: 'Settima minore', shortLabel: '7ª minore', semitones: 10 },
     { id: 'M7', label: 'Settima maggiore', shortLabel: '7ª maggiore', semitones: 11 }
   ],
-  '5ª, 4ª, 8ª': [
-    { id: 'P5', label: 'Quinta giusta', shortLabel: '5ª giusta', semitones: 7 },
+  '4ª, 5ª, 8ª': [
     { id: 'P4', label: 'Quarta giusta', shortLabel: '4ª giusta', semitones: 5 },
+    { id: 'P5', label: 'Quinta giusta', shortLabel: '5ª giusta', semitones: 7 },
     { id: 'P8', label: 'Ottava giusta', shortLabel: '8ª giusta', semitones: 12 }
   ],
   '9ª': [
@@ -79,17 +79,17 @@ const INTERVAL_OPTION_SETS: Record<IntervalType, IntervalAnswerOption[]> = {
     { id: 'P8', label: 'Ottava giusta', shortLabel: '8ª giusta', semitones: 12 }
   ],
   'Scala cromatica': [
-    { id: 'M2', label: 'Seconda maggiore', shortLabel: '2ª maggiore', semitones: 2 },
     { id: 'm2', label: 'Seconda minore', shortLabel: '2ª minore', semitones: 1 },
-    { id: 'M3', label: 'Terza maggiore', shortLabel: '3ª maggiore', semitones: 4 },
+    { id: 'M2', label: 'Seconda maggiore', shortLabel: '2ª maggiore', semitones: 2 },
     { id: 'm3', label: 'Terza minore', shortLabel: '3ª minore', semitones: 3 },
+    { id: 'M3', label: 'Terza maggiore', shortLabel: '3ª maggiore', semitones: 4 },
     { id: 'P4', label: 'Quarta giusta', shortLabel: '4ª giusta', semitones: 5 },
     { id: 'd5', label: 'Quinta diminuita', shortLabel: '5ª diminuita', semitones: 6 },
     { id: 'P5', label: 'Quinta giusta', shortLabel: '5ª giusta', semitones: 7 },
     { id: 'A5', label: 'Quinta aumentata', shortLabel: '5ª aumentata', semitones: 8 },
     { id: 'M6', label: 'Sesta maggiore', shortLabel: '6ª maggiore', semitones: 9 },
-    { id: 'M7', label: 'Settima maggiore', shortLabel: '7ª maggiore', semitones: 11 },
     { id: 'm7', label: 'Settima minore', shortLabel: '7ª minore', semitones: 10 },
+    { id: 'M7', label: 'Settima maggiore', shortLabel: '7ª maggiore', semitones: 11 },
     { id: 'P8', label: 'Ottava giusta', shortLabel: '8ª giusta', semitones: 12 },
     { id: 'm9', label: 'Nona minore', shortLabel: '9ª minore', semitones: 13 },
     { id: 'M9', label: 'Nona maggiore', shortLabel: '9ª maggiore', semitones: 14 }

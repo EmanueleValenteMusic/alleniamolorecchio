@@ -65,7 +65,7 @@ export function renderApp(state: AppState): string {
                 <option value="5ª" ${state.settings.intervalType === '5ª' ? 'selected' : ''}>5ª</option>
                 <option value="6ª" ${state.settings.intervalType === '6ª' ? 'selected' : ''}>6ª</option>
                 <option value="7ª" ${state.settings.intervalType === '7ª' ? 'selected' : ''}>7ª</option>
-                <option value="5ª, 4ª, 8ª" ${state.settings.intervalType === '5ª, 4ª, 8ª' ? 'selected' : ''}>5ª, 4ª, 8ª</option>
+                <option value="4ª, 5ª, 8ª" ${state.settings.intervalType === '4ª, 5ª, 8ª' ? 'selected' : ''}>4ª, 5ª, 8ª</option>
                 <option value="9ª" ${state.settings.intervalType === '9ª' ? 'selected' : ''}>9ª</option>
                 <option value="Scala maggiore" ${state.settings.intervalType === 'Scala maggiore' ? 'selected' : ''}>Scala maggiore</option>
                 <option value="Scala cromatica" ${state.settings.intervalType === 'Scala cromatica' ? 'selected' : ''}>Scala cromatica</option>

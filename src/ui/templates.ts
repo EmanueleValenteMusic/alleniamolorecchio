@@ -44,15 +44,15 @@ export function renderApp(state: AppState): string {
           <label class="mini-control">
             <span>Modalita</span>
             <select data-setting="play-mode">
-              <option value="intervalli" ${state.settings.playMode === 'intervalli' ? 'selected' : ''}>Intervalli</option>
               <option value="altezza" ${state.settings.playMode === 'altezza' ? 'selected' : ''}>Altezza</option>
               <option value="durata" ${state.settings.playMode === 'durata' ? 'selected' : ''}>Durata</option>
               <option value="intensita" ${state.settings.playMode === 'intensita' ? 'selected' : ''}>Intensità</option>
-              <option value="nota singola" ${state.settings.playMode === 'nota singola' ? 'selected' : ''}>Nota singola</option>
-              <option value="triadi" ${state.settings.playMode === 'triadi' ? 'selected' : ''}>Progressione triadi</option>
-              <option value="tipo triade" ${state.settings.playMode === 'tipo triade' ? 'selected' : ''}>Tipo Triade</option>
-              <option value="quadriadi" ${state.settings.playMode === 'quadriadi' ? 'selected' : ''}>Progressione quadriadi</option>
+              <option value="intervalli" ${state.settings.playMode === 'intervalli' ? 'selected' : ''}>Intervalli</option>
+              <option value="tipo triade" ${state.settings.playMode === 'tipo triade' ? 'selected' : ''}>Tipo Triadi</option>
               <option value="tipo quadriadi" ${state.settings.playMode === 'tipo quadriadi' ? 'selected' : ''}>Tipo Quadriadi</option>
+              <option value="nota singola" ${state.settings.playMode === 'nota singola' ? 'selected' : ''}>Progressione Note</option>
+              <option value="triadi" ${state.settings.playMode === 'triadi' ? 'selected' : ''}>Progressione Triadi</option>
+              <option value="quadriadi" ${state.settings.playMode === 'quadriadi' ? 'selected' : ''}>Progressione Quadriadi</option>
             </select>
           </label>
           ${isIntervalMode ? `

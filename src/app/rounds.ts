@@ -259,7 +259,7 @@ function createIntervalRound(settings: SettingsState): RoundState {
 function createTriadTypeRound(settings: SettingsState): RoundState {
   const qualities: Array<'maggiore' | 'minore' | 'diminuita' | 'aumentata'> = ['maggiore', 'minore', 'diminuita', 'aumentata'];
   const correctQuality = sample(qualities);
-  const rootMidi = randomBetween(48, 66);
+  const rootMidi = randomBetween(55, 72);
   let midi: number[];
 
   if (correctQuality === 'maggiore') {
@@ -308,7 +308,7 @@ function createTriadTypeRound(settings: SettingsState): RoundState {
 function createTetradTypeRound(settings: SettingsState): RoundState {
   const qualities: Array<TetradQuestion['correctQuality']> = ['maj7', 'm7', '7', 'm7b5', 'mMaj7', 'maj7#5', 'dim7'];
   const correctQuality = sample(qualities);
-  const rootMidi = randomBetween(48, 64);
+  const rootMidi = randomBetween(55, 70);
   let midi: number[];
 
   switch (correctQuality) {

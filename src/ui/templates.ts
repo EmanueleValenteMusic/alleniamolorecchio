@@ -103,6 +103,14 @@ export function renderApp(state: AppState): string {
                 <option value="melodico" ${state.settings.playbackMode === 'melodico' ? 'selected' : ''}>Melodico</option>
               </select>
             </label>
+          ` : isTetradType ? `
+            <label class="mini-control">
+              <span>Riproduzione</span>
+              <select data-setting="playback-mode">
+                <option value="armonico" ${state.settings.playbackMode === 'armonico' ? 'selected' : ''}>Armonico</option>
+                <option value="melodico" ${state.settings.playbackMode === 'melodico' ? 'selected' : ''}>Melodico</option>
+              </select>
+            </label>
           ` : `
             <label class="mini-control">
               <span>Slot</span>
@@ -134,7 +142,7 @@ export function renderApp(state: AppState): string {
           ${hideQuestionButton ? '' : `<button class="pill pill--question" data-role="play-sequence" data-action="play-sequence">${primaryActionLabel}</button>`}
           ${isIntervalMode ? '' : '<button class="pill pill--answer" data-role="play-answer" data-action="play-answer">Ascolta risposta</button>'}
           <button class="pill pill--check" data-role="check-answer" data-action="check-answer">Verifica</button>
-          ${isIntervalMode ? '' : '<button class="pill pill--reset" data-role="reset-slots" data-action="reset-slots">Pulisci</button>'}
+          ${isIntervalMode || isTriadType || isTetradType ? '' : '<button class="pill pill--reset" data-role="reset-slots" data-action="reset-slots">Pulisci</button>'}
           <button class="pill pill--new" data-role="new-round" data-action="new-round">Nuovo</button>
         </div>
       </section>

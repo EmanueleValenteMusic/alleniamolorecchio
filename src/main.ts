@@ -573,7 +573,7 @@ function finalizeIntervalAnswer(answerId: string): void {
     state.score.roundsSolved += 1;
     state.round.solved = true;
     persistScore(state.score);
-    setFeedback(`+${breakdown.earned}`, 'success');
+    setFeedback(`Risposta Corretta +${breakdown.earned}`, 'success');
     render();
     return;
   }
@@ -711,7 +711,7 @@ function finalizeTriadAnswer(answerId: string): void {
     state.score.roundsSolved += 1;
     state.round.solved = true;
     persistScore(state.score);
-    setFeedback(`+${breakdown.earned}`, 'success');
+    setFeedback(`Risposta Corretta +${breakdown.earned}`, 'success');
     render();
     return;
   }
@@ -851,7 +851,7 @@ function finalizeTetradAnswer(answerId: string): void {
     state.score.roundsSolved += 1;
     state.round.solved = true;
     persistScore(state.score);
-    setFeedback(`+${breakdown.earned}`, 'success');
+    setFeedback(`Risposta Corretta +${breakdown.earned}`, 'success');
     render();
     return;
   }
@@ -1126,7 +1126,7 @@ function checkAnswer(): void {
     state.score.roundsSolved += 1;
     state.round.solved = true;
     persistScore(state.score);
-    setFeedback(`+${breakdown.earned}`, 'success');
+    setFeedback(`Risposta Corretta +${breakdown.earned}`, 'success');
     render();
     return;
   }

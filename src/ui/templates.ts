@@ -202,7 +202,7 @@ function renderTriadBoard(state: AppState): string {
     <div class="feedback feedback--${state.feedbackTone}" data-role="feedback-box">
       <p data-role="feedback-text">${state.feedback}</p>
     </div>
-    <div class="interval-answer-grid" style="--interval-answer-columns:4;">
+    <div class="interval-answer-grid interval-answer-grid--spacious" style="--interval-answer-columns:4;">
       ${['maggiore', 'minore', 'diminuita', 'aumentata'].map((q, index) => renderTriadAnswerButton(state, q as any, index)).join('')}
     </div>
   `;
@@ -256,7 +256,7 @@ function renderTetradBoard(state: AppState): string {
     <div class="feedback feedback--${state.feedbackTone}" data-role="feedback-box">
       <p data-role="feedback-text">${state.feedback}</p>
     </div>
-    <div class="interval-answer-grid" style="--interval-answer-columns:${getIntervalAnswerColumns(7)};">
+    <div class="interval-answer-grid interval-answer-grid--spacious" style="--interval-answer-columns:${getIntervalAnswerColumns(7)};">
       ${['maj7', 'm7', '7', 'm7b5', 'mMaj7', 'maj7#5', 'dim7'].map((q, index) => renderTetradAnswerButton(state, q as any, index)).join('')}
     </div>
   `;

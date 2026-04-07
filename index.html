@@ -217,6 +217,10 @@ button {
   gap: 12px;
 }
 
+.interval-answer-grid--spacious {
+  margin-top: 18px;
+}
+
 .card-grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -925,7 +929,7 @@ button {
     <div class="feedback feedback--${e.feedbackTone}" data-role="feedback-box">
       <p data-role="feedback-text">${e.feedback}</p>
     </div>
-    <div class="interval-answer-grid" style="--interval-answer-columns:4;">
+    <div class="interval-answer-grid interval-answer-grid--spacious" style="--interval-answer-columns:4;">
       ${["maggiore","minore","diminuita","aumentata"].map((o,a)=>Xe(e,o,a)).join("")}
     </div>
   `:""}function Xe(e,t,o){let a=e.round.triadQuestion,i=e.round.selectedAnswerId===t,r=a?.correctQuality===t,l=e.round.solved||e.round.locked,p=l?i?r?" interval-choice--correct":" interval-choice--wrong":l&&r?" interval-choice--correct":"":i?" interval-choice--selected":"",c={maggiore:"Maggiore",minore:"Minore",diminuita:"Diminuita",aumentata:"Aumentata"};return`
@@ -948,7 +952,7 @@ button {
     <div class="feedback feedback--${e.feedbackTone}" data-role="feedback-box">
       <p data-role="feedback-text">${e.feedback}</p>
     </div>
-    <div class="interval-answer-grid" style="--interval-answer-columns:${ge(7)};">
+    <div class="interval-answer-grid interval-answer-grid--spacious" style="--interval-answer-columns:${ge(7)};">
       ${["maj7","m7","7","m7b5","mMaj7","maj7#5","dim7"].map((o,a)=>Ke(e,o,a)).join("")}
     </div>
   `:""}function Ke(e,t,o){let a=e.round.tetradQuestion,i=e.round.selectedAnswerId===t,r=a?.correctQuality===t,l=e.round.solved||e.round.locked,p=l?i?r?" interval-choice--correct":" interval-choice--wrong":l&&r?" interval-choice--correct":"":i?" interval-choice--selected":"",c={maj7:"Maj7",m7:"m7",7:"7",m7b5:"m7b5",mMaj7:"mMaj7","maj7#5":"Maj7#5",dim7:"dim7"};return`

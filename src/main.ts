@@ -1058,6 +1058,16 @@ function checkAnswer(): void {
     return;
   }
 
+  if (state.settings.playMode === 'tipo triade') {
+    checkTriadAnswer();
+    return;
+  }
+
+  if (state.settings.playMode === 'tipo quadriadi') {
+    checkTetradAnswer();
+    return;
+  }
+
   if (state.isPlaying) {
     return;
   }

@@ -100,6 +100,10 @@ export function createRound(settings: SettingsState): RoundState {
     return createIntervalRound(settings);
   }
 
+  if (settings.playMode === 'tipo triade') {
+    return createTriadTypeRound(settings);
+  }
+
   if (settings.playMode === 'altezza' || settings.playMode === 'durata' || settings.playMode === 'intensita') {
     return createOrderingRound(settings);
   }
@@ -241,6 +245,55 @@ function createIntervalRound(settings: SettingsState): RoundState {
       baseMidi: lowMidi,
       playbackMode,
       direction
+    },
+    selectedAnswerId: null,
+    orderingChallenge: null
+  };
+}
+
+function createTriadTypeRound(settings: SettingsState): RoundState {
+  const qualities: Array<'maggiore' | 'minore' | 'diminuita' | 'aumentata'> = ['maggiore', 'minore', 'diminuita', 'aumentata'];
+  const correctQuality = sample(qualities);
+  const rootMidi = randomBetween(48, 66);
+  let midi: number[];
+
+  if (correctQuality === 'maggiore') {
+    midi = [rootMidi, rootMidi + 4, rootMidi + 7];
+  } else if (correctQuality === 'minore') {
+    midi = [rootMidi, rootMidi + 3, rootMidi + 7];
+  } else if (correctQuality === 'diminuita') {
+    midi = [rootMidi, rootMidi + 3, rootMidi + 6];
+  } else {
+    midi = [rootMidi, rootMidi + 4, rootMidi + 8];
+  }
+
+  roundIdSeed += 1;
+
+  return {
+    id: roundIdSeed,
+    scale: null,
+    options: [],
+    solution: [],
+    placements: [],
+    lastCheckResults: [],
+    attempts: 0,
+    counted: false,
+    locked: false,
+    solved: false,
+    slotCount: 0,
+    playMode: settings.playMode,
+    playbackMode: settings.playbackMode,
+    sequencePlayCount: 0,
+    cardPreviewCount: 0,
+    answerWindowStartedAt: null,
+    sequenceFinishedAt: null,
+    intervalQuestion: null,
+    triadQuestion: {
+      correctQuality,
+      rootMidi,
+      midi,
+      notes: midi.map(formatNoteName),
+      playbackMode: settings.playbackMode
     },
     selectedAnswerId: null,
     orderingChallenge: null

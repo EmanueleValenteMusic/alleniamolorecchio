@@ -109,6 +109,11 @@ function bindUi(): void {
       chooseTriadAnswer(button.dataset.answerId ?? '', button);
     });
   });
+  appRoot.querySelectorAll<HTMLButtonElement>('[data-action="choose-tetrad-answer"]')?.forEach((button) => {
+    button.addEventListener('click', () => {
+      chooseTetradAnswer(button.dataset.answerId ?? '', button);
+    });
+  });
 }
 
 function handleSettingsChange(): void {
@@ -310,6 +315,14 @@ async function playSequence(): Promise<void> {
     await playTriadQuestion();
     return;
   }
+  if (state.settings.playMode === 'tipo quadriadi') {
+    if (state.round.solved || state.round.locked) {
+      startNewRound('');
+    }
+
+    await playTetradQuestion();
+    return;
+  }
 
   if (isOrderingMode(state.settings.playMode)) {
     if (state.round.solved || state.round.locked) {
@@ -416,6 +429,10 @@ async function playAnswer(): Promise<void> {
 
   if (state.settings.playMode === 'tipo triade') {
     await playTriadAnswer();
+    return;
+  }
+  if (state.settings.playMode === 'tipo quadriadi') {
+    await playTetradAnswer();
     return;
   }
 
@@ -711,6 +728,232 @@ function checkTriadAnswer(): void {
   }
 
   finalizeTriadAnswer(state.round.selectedAnswerId);
+}
+
+function chooseTetradAnswer(answerId: string, source: HTMLElement): void {
+  if (!answerId || state.isPlaying || state.round.locked || state.round.solved) {
+    return;
+  }
+
+  const question = state.round.tetradQuestion;
+  if (!question) {
+    return;
+  }
+
+  state.round.selectedAnswerId = answerId;
+  if (state.feedback === 'Scegli una risposta' && state.feedbackTone === 'info') {
+    setFeedback('', 'idle');
+  }
+
+  const idxMap = ['maj7', 'm7', '7', 'm7b5', 'mMaj7', 'maj7#5', 'dim7'];
+  const accentIndex = Math.max(0, idxMap.indexOf(answerId as any));
+  animateCardTap(source, getCardAccent(accentIndex));
+  render();
+  void previewTetradAnswer(answerId);
+}
+
+async function previewTetradAnswer(answerId: string): Promise<void> {
+  const question = state.round.tetradQuestion;
+  if (!question) {
+    return;
+  }
+
+  const quality = answerId as Exclude<string, ''>;
+  const root = question.rootMidi;
+  let midi: number[];
+
+  switch (quality) {
+    case 'maj7': midi = [root, root + 4, root + 7, root + 11]; break;
+    case 'm7': midi = [root, root + 3, root + 7, root + 10]; break;
+    case '7': midi = [root, root + 4, root + 7, root + 10]; break;
+    case 'm7b5': midi = [root, root + 3, root + 6, root + 10]; break;
+    case 'mMaj7': midi = [root, root + 3, root + 7, root + 11]; break;
+    case 'maj7#5': midi = [root, root + 4, root + 8, root + 11]; break;
+    case 'dim7': midi = [root, root + 3, root + 6, root + 9]; break;
+    default: midi = [root, root + 4, root + 7, root + 11];
+  }
+
+  const ready = await piano.ensureReady();
+  state.audioReady = ready;
+  if (!ready) {
+    setFeedback('Audio non disponibile', 'error');
+    return;
+  }
+
+  clearPendingTimers();
+  state.isPlaying = true;
+  syncLiveUi(appRoot, state);
+
+  const startAt = piano.currentTime + 0.01;
+  let durationMs = 0;
+
+  if (question.playbackMode === 'armonico') {
+    piano.playChord(midi, { when: startAt, duration: 1.02, velocity: 0.34 });
+    durationMs = 1180;
+    pulseCardBackground(getCardAccent(0), durationMs);
+  } else {
+    piano.playArpeggio(midi, { when: startAt, step: 0.22, noteDuration: 0.46, velocity: 0.34 });
+    durationMs = 1880;
+    pulseCardBackground(getCardAccent(0), durationMs);
+  }
+
+  const currentRoundId = state.round.id;
+  startBackdropNotes(durationMs);
+
+  playbackTimerId = window.setTimeout(() => {
+    if (state.round.id !== currentRoundId) {
+      return;
+    }
+
+    state.isPlaying = false;
+    syncLiveUi(appRoot, state);
+  }, durationMs);
+}
+
+function finalizeTetradAnswer(answerId: string): void {
+  const question = state.round.tetradQuestion;
+  if (!question) {
+    return;
+  }
+
+  if (!state.round.counted) {
+    state.score.roundsPlayed += 1;
+    state.round.counted = true;
+  }
+
+  state.round.selectedAnswerId = answerId;
+  const correct = answerId === question.correctQuality;
+
+  if (correct) {
+    const breakdown = computeScoreBreakdown(state.round, state.settings);
+    state.score.totalPoints = Math.max(0, state.score.totalPoints + breakdown.earned);
+    state.score.streak += 1;
+    state.score.bestStreak = Math.max(state.score.bestStreak, state.score.streak);
+    state.score.roundsSolved += 1;
+    state.round.solved = true;
+    persistScore(state.score);
+    setFeedback(`+${breakdown.earned}`, 'success');
+    render();
+    return;
+  }
+
+  state.round.attempts += 1;
+  state.round.locked = true;
+  state.score.streak = 0;
+  state.score.totalPoints = Math.max(0, state.score.totalPoints - getMistakePenalty(state.round));
+  persistScore(state.score);
+  const correctLabel = question.correctQuality ?? 'Risposta corretta';
+  setFeedback(`Era ${correctLabel}`, 'error');
+  render();
+}
+
+function checkTetradAnswer(): void {
+  if (state.isPlaying || state.round.locked || state.round.solved) {
+    return;
+  }
+
+  if (!state.round.selectedAnswerId) {
+    setFeedback('Scegli una risposta', 'info');
+    return;
+  }
+
+  finalizeTetradAnswer(state.round.selectedAnswerId);
+}
+
+async function playTetradQuestion(): Promise<void> {
+  if (state.isPlaying) {
+    return;
+  }
+
+  const question = state.round.tetradQuestion;
+  if (!question) {
+    return;
+  }
+
+  const ready = await piano.ensureReady();
+  state.audioReady = ready;
+  if (!ready) {
+    setFeedback('Audio non disponibile', 'error');
+    return;
+  }
+
+  clearPendingTimers();
+  state.isPlaying = true;
+  state.round.sequencePlayCount += 1;
+  syncLiveUi(appRoot, state);
+
+  const startAt = piano.currentTime + 0.08;
+  const currentRoundId = state.round.id;
+  let durationMs = 0;
+
+  if (question.playbackMode === 'armonico') {
+    piano.playChord(question.midi, { when: startAt, duration: 1.02, velocity: 0.34 });
+    durationMs = 1180;
+  } else {
+    piano.playArpeggio(question.midi, { when: startAt, step: 0.22, noteDuration: 0.46, velocity: 0.34 });
+    durationMs = 1880;
+  }
+
+  pulseSequenceBackground(durationMs);
+
+  playbackTimerId = window.setTimeout(() => {
+    if (state.round.id !== currentRoundId) {
+      return;
+    }
+
+    state.isPlaying = false;
+    state.round.sequenceFinishedAt = Date.now();
+    if (state.round.answerWindowStartedAt === null) {
+      state.round.answerWindowStartedAt = state.round.sequenceFinishedAt;
+    }
+
+    syncLiveUi(appRoot, state);
+  }, durationMs);
+}
+
+async function playTetradAnswer(): Promise<void> {
+  if (state.isPlaying) {
+    return;
+  }
+
+  const question = state.round.tetradQuestion;
+  if (!question) {
+    return;
+  }
+
+  const ready = await piano.ensureReady();
+  state.audioReady = ready;
+  if (!ready) {
+    setFeedback('Audio non disponibile', 'error');
+    return;
+  }
+
+  clearPendingTimers();
+  state.isPlaying = true;
+  syncLiveUi(appRoot, state);
+
+  const startAt = piano.currentTime + 0.08;
+  const currentRoundId = state.round.id;
+  let durationMs = 0;
+
+  if (question.playbackMode === 'armonico') {
+    piano.playChord(question.midi, { when: startAt, duration: 1.02, velocity: 0.34 });
+    durationMs = 1180;
+  } else {
+    piano.playArpeggio(question.midi, { when: startAt, step: 0.22, noteDuration: 0.46, velocity: 0.34 });
+    durationMs = 1880;
+  }
+
+  pulseSequenceBackground(durationMs);
+
+  playbackTimerId = window.setTimeout(() => {
+    if (state.round.id !== currentRoundId) {
+      return;
+    }
+
+    state.isPlaying = false;
+    syncLiveUi(appRoot, state);
+  }, durationMs);
 }
 
 async function playTriadQuestion(): Promise<void> {
@@ -1164,7 +1407,7 @@ function isScaleFamily(value: string | undefined): value is ScaleFamily {
 }
 
 function isPlayMode(value: string | undefined): value is PlayMode {
-  return value === 'intervalli' || value === 'altezza' || value === 'durata' || value === 'intensita' || value === 'nota singola' || value === 'triadi' || value === 'quadriadi' || value === 'tipo triade';
+  return value === 'intervalli' || value === 'altezza' || value === 'durata' || value === 'intensita' || value === 'nota singola' || value === 'triadi' || value === 'quadriadi' || value === 'tipo triade' || value === 'tipo quadriadi';
 }
 
 function isIntervalType(value: string | undefined): value is IntervalType {

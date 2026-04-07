@@ -19,6 +19,8 @@ export function syncLiveUi(root: HTMLElement, state: AppState): void {
         ? (state.round.solved || state.round.locked ? 'Prossima domanda' : 'Ascolta domanda')
         : state.settings.playMode === 'tipo triade'
         ? (state.round.solved || state.round.locked ? 'Prossima domanda' : 'Ascolta triade')
+        : state.settings.playMode === 'tipo quadriadi'
+        ? (state.round.solved || state.round.locked ? 'Prossima domanda' : 'Ascolta quadriade')
         : (state.round.solved ? 'Prossima domanda' : 'Ascolta domanda');
   }
 
@@ -40,12 +42,17 @@ export function syncLiveUi(root: HTMLElement, state: AppState): void {
   }
 
   const triadAnswerButtons = root.querySelectorAll<HTMLButtonElement>('[data-role="triad-answer"]');
+  const tetradAnswerButtons = root.querySelectorAll<HTMLButtonElement>('[data-role="tetrad-answer"]');
 
   intervalAnswerButtons.forEach((button) => {
     button.disabled = state.isPlaying || state.round.locked || state.round.solved;
   });
 
   triadAnswerButtons.forEach((button) => {
+    button.disabled = state.isPlaying || state.round.locked || state.round.solved;
+  });
+
+  tetradAnswerButtons.forEach((button) => {
     button.disabled = state.isPlaying || state.round.locked || state.round.solved;
   });
 

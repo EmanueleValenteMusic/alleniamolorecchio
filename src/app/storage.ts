@@ -26,7 +26,7 @@ export function loadSettings(): SettingsState {
       scaleFamily: parsed.scaleFamily === 'minore naturale' || parsed.scaleFamily === 'minore armonica' || parsed.scaleFamily === 'minore melodica'
         ? parsed.scaleFamily
         : 'maggiore',
-      playMode: parsed.playMode === 'intervalli' || parsed.playMode === 'altezza' || parsed.playMode === 'durata' || parsed.playMode === 'intensita' || parsed.playMode === 'quadriadi' || parsed.playMode === 'nota singola' || parsed.playMode === 'triadi' || parsed.playMode === 'tipo triade' ? parsed.playMode : 'triadi',
+      playMode: parsed.playMode === 'intervalli' || parsed.playMode === 'altezza' || parsed.playMode === 'durata' || parsed.playMode === 'intensita' || parsed.playMode === 'quadriadi' || parsed.playMode === 'nota singola' || parsed.playMode === 'triadi' || parsed.playMode === 'tipo triade' || parsed.playMode === 'tipo quadriadi' ? parsed.playMode : 'triadi',
       playbackMode: parsed.playbackMode === 'melodico' ? 'melodico' : 'armonico',
       intervalType: parsed.intervalType === '3ª' || parsed.intervalType === '4ª' || parsed.intervalType === '5ª' || parsed.intervalType === '6ª' || parsed.intervalType === '7ª' || parsed.intervalType === '5ª, 4ª, 8ª' || parsed.intervalType === '9ª' || parsed.intervalType === 'Scala maggiore' || parsed.intervalType === 'Scala cromatica'
         ? parsed.intervalType

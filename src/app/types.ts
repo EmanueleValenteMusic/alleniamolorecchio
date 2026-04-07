@@ -1,6 +1,7 @@
 export type ScaleFamily = 'maggiore' | 'minore naturale' | 'minore armonica' | 'minore melodica';
-export type PlayMode = 'intervalli' | 'altezza' | 'durata' | 'intensita' | 'nota singola' | 'triadi' | 'quadriadi' | 'tipo triade';
+export type PlayMode = 'intervalli' | 'altezza' | 'durata' | 'intensita' | 'nota singola' | 'triadi' | 'quadriadi' | 'tipo triade' | 'tipo quadriadi';
 export type TriadQuality = 'maggiore' | 'minore' | 'diminuita' | 'aumentata';
+export type TetradQuality = 'maj7' | 'm7' | '7' | 'm7b5' | 'mMaj7' | 'maj7#5' | 'dim7';
 export type PlaybackMode = 'armonico' | 'melodico';
 export type IntervalType = '2ª' | '3ª' | '4ª' | '5ª' | '6ª' | '7ª' | '5ª, 4ª, 8ª' | '9ª' | 'Scala maggiore' | 'Scala cromatica';
 export type IntervalPlaybackModeSetting = 'armonico' | 'melodico' | 'entrambi';
@@ -38,6 +39,14 @@ export interface IntervalQuestion {
 
 export interface TriadQuestion {
   correctQuality: TriadQuality;
+  rootMidi: number;
+  midi: number[];
+  notes: string[];
+  playbackMode: PlaybackMode;
+}
+
+export interface TetradQuestion {
+  correctQuality: TetradQuality;
   rootMidi: number;
   midi: number[];
   notes: string[];
@@ -110,6 +119,7 @@ export interface RoundState {
   sequenceFinishedAt: number | null;
   intervalQuestion: IntervalQuestion | null;
   triadQuestion: TriadQuestion | null;
+  tetradQuestion: TetradQuestion | null;
   selectedAnswerId: string | null;
   orderingChallenge: OrderingChallenge | null;
 }

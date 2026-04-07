@@ -8,6 +8,7 @@ import type {
   OrderingChallenge,
   PlayMode,
   RoundState,
+  TetradQuality,
   ScaleDefinition,
   SoundTimbre,
   SettingsState,
@@ -102,6 +103,10 @@ export function createRound(settings: SettingsState): RoundState {
 
   if (settings.playMode === 'tipo triade') {
     return createTriadTypeRound(settings);
+  }
+  
+  if (settings.playMode === 'tipo quadriadi') {
+    return createTetradTypeRound(settings);
   }
 
   if (settings.playMode === 'altezza' || settings.playMode === 'durata' || settings.playMode === 'intensita') {
@@ -289,6 +294,72 @@ function createTriadTypeRound(settings: SettingsState): RoundState {
     sequenceFinishedAt: null,
     intervalQuestion: null,
     triadQuestion: {
+      correctQuality,
+      rootMidi,
+      midi,
+      notes: midi.map(formatNoteName),
+      playbackMode: settings.playbackMode
+    },
+    selectedAnswerId: null,
+    orderingChallenge: null
+  };
+}
+
+function createTetradTypeRound(settings: SettingsState): RoundState {
+  const qualities: Array<TetradQuestion['correctQuality']> = ['maj7', 'm7', '7', 'm7b5', 'mMaj7', 'maj7#5', 'dim7'];
+  const correctQuality = sample(qualities);
+  const rootMidi = randomBetween(48, 64);
+  let midi: number[];
+
+  switch (correctQuality) {
+    case 'maj7':
+      midi = [rootMidi, rootMidi + 4, rootMidi + 7, rootMidi + 11];
+      break;
+    case 'm7':
+      midi = [rootMidi, rootMidi + 3, rootMidi + 7, rootMidi + 10];
+      break;
+    case '7':
+      midi = [rootMidi, rootMidi + 4, rootMidi + 7, rootMidi + 10];
+      break;
+    case 'm7b5':
+      midi = [rootMidi, rootMidi + 3, rootMidi + 6, rootMidi + 10];
+      break;
+    case 'mMaj7':
+      midi = [rootMidi, rootMidi + 3, rootMidi + 7, rootMidi + 11];
+      break;
+    case 'maj7#5':
+      midi = [rootMidi, rootMidi + 4, rootMidi + 8, rootMidi + 11];
+      break;
+    case 'dim7':
+      midi = [rootMidi, rootMidi + 3, rootMidi + 6, rootMidi + 9];
+      break;
+    default:
+      midi = [rootMidi, rootMidi + 4, rootMidi + 7, rootMidi + 11];
+  }
+
+  roundIdSeed += 1;
+
+  return {
+    id: roundIdSeed,
+    scale: null,
+    options: [],
+    solution: [],
+    placements: [],
+    lastCheckResults: [],
+    attempts: 0,
+    counted: false,
+    locked: false,
+    solved: false,
+    slotCount: 0,
+    playMode: settings.playMode,
+    playbackMode: settings.playbackMode,
+    sequencePlayCount: 0,
+    cardPreviewCount: 0,
+    answerWindowStartedAt: null,
+    sequenceFinishedAt: null,
+    intervalQuestion: null,
+    triadQuestion: null,
+    tetradQuestion: {
       correctQuality,
       rootMidi,
       midi,

@@ -10,13 +10,14 @@ export function renderApp(state: AppState): string {
     : Math.round((state.score.roundsSolved / state.score.roundsPlayed) * 100);
   const isIntervalMode = state.settings.playMode === 'intervalli';
   const isTriadType = state.settings.playMode === 'tipo triade';
+  const isTetradType = state.settings.playMode === 'tipo quadriadi';
   const isOrderingMode = state.settings.playMode === 'altezza' || state.settings.playMode === 'durata' || state.settings.playMode === 'intensita';
   const hideQuestionButton = isOrderingMode;
   const usedDegrees = new Set(state.round.placements.filter((degree): degree is number => degree !== null));
   const visibleOptions = isOrderingMode
     ? state.round.options.filter((option) => !usedDegrees.has(option.degree))
     : state.round.options;
-  const showCardsPanel = !isIntervalMode && !isTriadType;
+  const showCardsPanel = !isIntervalMode && !isTriadType && !isTetradType;
   const primaryActionLabel = state.isPlaying ? 'Suona...' : getPrimaryActionLabel(state);
 
   return `
@@ -51,6 +52,7 @@ export function renderApp(state: AppState): string {
               <option value="triadi" ${state.settings.playMode === 'triadi' ? 'selected' : ''}>Progressione triadi</option>
               <option value="tipo triade" ${state.settings.playMode === 'tipo triade' ? 'selected' : ''}>Tipo Triade</option>
               <option value="quadriadi" ${state.settings.playMode === 'quadriadi' ? 'selected' : ''}>Progressione quadriadi</option>
+              <option value="tipo quadriadi" ${state.settings.playMode === 'tipo quadriadi' ? 'selected' : ''}>Tipo Quadriadi</option>
             </select>
           </label>
           ${isIntervalMode ? `
@@ -138,7 +140,7 @@ export function renderApp(state: AppState): string {
       </section>
 
       <section class="panel board-panel${isIntervalMode ? ' board-panel--interval' : ''}">
-        ${isIntervalMode ? renderIntervalBoard(state) : isTriadType ? renderTriadBoard(state) : `
+        ${isIntervalMode ? renderIntervalBoard(state) : isTriadType ? renderTriadBoard(state) : isTetradType ? renderTetradBoard(state) : `
         <div class="sequence-strip" style="--slot-columns:${state.round.slotCount}; --slot-mobile-columns:${getBalancedSlotColumns(state.round.slotCount)};">
           ${state.round.placements.map((degree, index) => renderSlot(state, degree, index, state.round.lastCheckResults[index])).join('')}
         </div>
@@ -223,6 +225,63 @@ function renderTriadAnswerButton(state: AppState, answerId: string, index: numbe
       type="button"
       data-role="triad-answer"
       data-action="choose-triad-answer"
+      data-answer-id="${answerId}"
+      style="--card-accent:${CARD_ACCENTS[index % CARD_ACCENTS.length]}"
+    >
+      <strong>${labels[answerId]}</strong>
+      <small>${labels[answerId]}</small>
+      <span class="card-notes-layer" aria-hidden="true"></span>
+    </button>
+  `;
+}
+
+function renderTetradBoard(state: AppState): string {
+  const question = state.round.tetradQuestion;
+  if (!question) {
+    return '';
+  }
+
+  return `
+    <div class="interval-intro">
+      <p style="margin-bottom:12px;">Ascolta la quadriade e scegli la qualità corretta.</p>
+    </div>
+    <div class="feedback feedback--${state.feedbackTone}" data-role="feedback-box">
+      <p data-role="feedback-text">${state.feedback}</p>
+    </div>
+    <div class="interval-answer-grid" style="--interval-answer-columns:${getIntervalAnswerColumns(7)};">
+      ${['maj7', 'm7', '7', 'm7b5', 'mMaj7', 'maj7#5', 'dim7'].map((q, index) => renderTetradAnswerButton(state, q as any, index)).join('')}
+    </div>
+  `;
+}
+
+function renderTetradAnswerButton(state: AppState, answerId: string, index: number): string {
+  const question = state.round.tetradQuestion;
+  const isSelected = state.round.selectedAnswerId === answerId;
+  const isCorrect = question?.correctQuality === answerId;
+  const revealResult = state.round.solved || state.round.locked;
+  const revealCorrect = revealResult && isCorrect;
+  const resultClass = revealResult
+    ? isSelected
+      ? isCorrect ? ' interval-choice--correct' : ' interval-choice--wrong'
+      : revealCorrect ? ' interval-choice--correct' : ''
+    : isSelected ? ' interval-choice--selected' : '';
+
+  const labels: Record<string, string> = {
+    maj7: 'Maj7',
+    m7: 'm7',
+    '7': '7',
+    m7b5: 'm7b5',
+    mMaj7: 'mMaj7',
+    'maj7#5': 'Maj7#5',
+    dim7: 'dim7'
+  };
+
+  return `
+    <button
+      class="chord-card interval-choice${resultClass}"
+      type="button"
+      data-role="tetrad-answer"
+      data-action="choose-tetrad-answer"
       data-answer-id="${answerId}"
       style="--card-accent:${CARD_ACCENTS[index % CARD_ACCENTS.length]}"
     >

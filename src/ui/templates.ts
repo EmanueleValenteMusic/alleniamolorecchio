@@ -140,7 +140,7 @@ export function renderApp(state: AppState): string {
         </div>
         <div class="controls-panel__row controls-panel__row--actions">
           ${hideQuestionButton ? '' : `<button class="pill pill--question" data-role="play-sequence" data-action="play-sequence">${primaryActionLabel}</button>`}
-          ${isIntervalMode ? '' : '<button class="pill pill--answer" data-role="play-answer" data-action="play-answer">Ascolta risposta</button>'}
+          ${isIntervalMode || isTriadType || isTetradType ? '' : '<button class="pill pill--answer" data-role="play-answer" data-action="play-answer">Ascolta risposta</button>'}
           <button class="pill pill--check" data-role="check-answer" data-action="check-answer">Verifica</button>
           ${isIntervalMode || isTriadType || isTetradType ? '' : '<button class="pill pill--reset" data-role="reset-slots" data-action="reset-slots">Pulisci</button>'}
           <button class="pill pill--new" data-role="new-round" data-action="new-round">Nuovo</button>

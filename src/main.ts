@@ -602,7 +602,7 @@ function checkIntervalAnswer(): void {
 }
 
 function chooseTriadAnswer(answerId: string, source: HTMLElement): void {
-  if (!answerId || state.isPlaying || state.round.locked || state.round.solved) {
+  if (!answerId || state.isPlaying) {
     return;
   }
 
@@ -611,13 +611,20 @@ function chooseTriadAnswer(answerId: string, source: HTMLElement): void {
     return;
   }
 
+  const idxMap = ['maggiore', 'minore', 'diminuita', 'aumentata'];
+  const accentIndex = Math.max(0, idxMap.indexOf(answerId as any));
+
+  if (state.round.locked || state.round.solved) {
+    animateCardTap(source, getCardAccent(accentIndex));
+    void previewTriadAnswer(answerId);
+    return;
+  }
+
   state.round.selectedAnswerId = answerId;
   if (state.feedback === 'Scegli una risposta' && state.feedbackTone === 'info') {
     setFeedback('', 'idle');
   }
 
-  const idxMap = ['maggiore', 'minore', 'diminuita', 'aumentata'];
-  const accentIndex = Math.max(0, idxMap.indexOf(answerId as any));
   animateCardTap(source, getCardAccent(accentIndex));
   render();
   void previewTriadAnswer(answerId);
@@ -628,7 +635,6 @@ async function previewTriadAnswer(answerId: string): Promise<void> {
   if (!question) {
     return;
   }
-
   const quality = answerId as 'maggiore' | 'minore' | 'diminuita' | 'aumentata';
   let midi: number[];
   const root = question.rootMidi;
@@ -642,6 +648,9 @@ async function previewTriadAnswer(answerId: string): Promise<void> {
   } else {
     midi = [root, root + 4, root + 8];
   }
+
+  const idxMap = ['maggiore', 'minore', 'diminuita', 'aumentata'];
+  const accentIndex = Math.max(0, idxMap.indexOf(quality));
 
   const ready = await piano.ensureReady();
   state.audioReady = ready;
@@ -660,11 +669,11 @@ async function previewTriadAnswer(answerId: string): Promise<void> {
   if (question.playbackMode === 'armonico') {
     piano.playChord(midi, { when: startAt, duration: 1.02, velocity: 0.34 });
     durationMs = 1180;
-    pulseCardBackground(getCardAccent(0), durationMs);
+    pulseCardBackground(getCardAccent(accentIndex), durationMs);
   } else {
     piano.playArpeggio(midi, { when: startAt, step: 0.22, noteDuration: 0.46, velocity: 0.34 });
     durationMs = 1880;
-    pulseCardBackground(getCardAccent(0), durationMs);
+    pulseCardBackground(getCardAccent(accentIndex), durationMs);
   }
 
   const currentRoundId = state.round.id;
@@ -731,7 +740,7 @@ function checkTriadAnswer(): void {
 }
 
 function chooseTetradAnswer(answerId: string, source: HTMLElement): void {
-  if (!answerId || state.isPlaying || state.round.locked || state.round.solved) {
+  if (!answerId || state.isPlaying) {
     return;
   }
 
@@ -740,13 +749,20 @@ function chooseTetradAnswer(answerId: string, source: HTMLElement): void {
     return;
   }
 
+  const idxMap = ['maj7', 'm7', '7', 'm7b5', 'mMaj7', 'maj7#5', 'dim7'];
+  const accentIndex = Math.max(0, idxMap.indexOf(answerId as any));
+
+  if (state.round.locked || state.round.solved) {
+    animateCardTap(source, getCardAccent(accentIndex));
+    void previewTetradAnswer(answerId);
+    return;
+  }
+
   state.round.selectedAnswerId = answerId;
   if (state.feedback === 'Scegli una risposta' && state.feedbackTone === 'info') {
     setFeedback('', 'idle');
   }
 
-  const idxMap = ['maj7', 'm7', '7', 'm7b5', 'mMaj7', 'maj7#5', 'dim7'];
-  const accentIndex = Math.max(0, idxMap.indexOf(answerId as any));
   animateCardTap(source, getCardAccent(accentIndex));
   render();
   void previewTetradAnswer(answerId);
@@ -773,6 +789,9 @@ async function previewTetradAnswer(answerId: string): Promise<void> {
     default: midi = [root, root + 4, root + 7, root + 11];
   }
 
+  const idxMap = ['maj7', 'm7', '7', 'm7b5', 'mMaj7', 'maj7#5', 'dim7'];
+  const accentIndex = Math.max(0, idxMap.indexOf(quality));
+
   const ready = await piano.ensureReady();
   state.audioReady = ready;
   if (!ready) {
@@ -790,11 +809,11 @@ async function previewTetradAnswer(answerId: string): Promise<void> {
   if (question.playbackMode === 'armonico') {
     piano.playChord(midi, { when: startAt, duration: 1.02, velocity: 0.34 });
     durationMs = 1180;
-    pulseCardBackground(getCardAccent(0), durationMs);
+    pulseCardBackground(getCardAccent(accentIndex), durationMs);
   } else {
     piano.playArpeggio(midi, { when: startAt, step: 0.22, noteDuration: 0.46, velocity: 0.34 });
     durationMs = 1880;
-    pulseCardBackground(getCardAccent(0), durationMs);
+    pulseCardBackground(getCardAccent(accentIndex), durationMs);
   }
 
   const currentRoundId = state.round.id;

@@ -1,7 +1,7 @@
 import { PianoEngine } from './audio/piano';
 import { computeScoreBreakdown, getMistakePenalty } from './app/scoring';
 import { createRound, evaluatePlacements } from './app/rounds';
-import { clampSlotCount, loadScore, loadSettings, persistScore, persistSettings } from './app/storage';
+import { clampSlotCount, loadScore, loadSettings, persistScore, persistSettings, createEmptyScore } from './app/storage';
 import type {
   AppState,
   ChordOption,
@@ -52,6 +52,17 @@ render();
 document.addEventListener('pointermove', handlePointerMove);
 document.addEventListener('pointerup', handlePointerUp);
 document.addEventListener('pointercancel', handlePointerUp);
+document.addEventListener('keydown', handleKeyDown as EventListener);
+
+function handleKeyDown(event: KeyboardEvent): void {
+  // CMD+0 clears score statistics
+  if ((event.metaKey || event.ctrlKey) && event.key === '0') {
+    event.preventDefault();
+    state.score = createEmptyScore();
+    persistScore(state.score);
+    render();
+  }
+}
 
 function render(): void {
   appRoot.innerHTML = renderApp(state);
@@ -73,7 +84,7 @@ function bindUi(): void {
   });
 
   appRoot.querySelector('[data-action="reset-slots"]')?.addEventListener('click', () => {
-    if (state.isPlaying || state.round.locked) {
+    if (state.isPlaying || state.round.locked || state.round.solved) {
       return;
     }
 
@@ -128,6 +139,8 @@ function handleSettingsChange(): void {
   const intervalTypeValue = appRoot.querySelector<HTMLSelectElement>('[data-setting="interval-type"]')?.value;
   const intervalPlaybackModeValue = appRoot.querySelector<HTMLSelectElement>('[data-setting="interval-playback-mode"]')?.value;
   const intervalDirectionValue = appRoot.querySelector<HTMLSelectElement>('[data-setting="interval-direction"]')?.value;
+  const intervalDifficultyValue = appRoot.querySelector<HTMLSelectElement>('[data-setting="interval-difficulty"]')?.value;
+  const typeDifficultyValue = appRoot.querySelector<HTMLSelectElement>('[data-setting="type-difficulty"]')?.value;
   const noteNamingValue = appRoot.querySelector<HTMLSelectElement>('[data-setting="note-naming"]')?.value;
   const nextSettings: SettingsState = {
     slotCount: clampSlotCount(Number(slotCountValue)),
@@ -137,6 +150,8 @@ function handleSettingsChange(): void {
     intervalType: isIntervalType(intervalTypeValue) ? intervalTypeValue : '2ª',
     intervalPlaybackMode: isIntervalPlaybackMode(intervalPlaybackModeValue) ? intervalPlaybackModeValue : 'armonico',
     intervalDirection: intervalDirectionValue === 'discendente' ? 'discendente' : 'ascendente'
+    ,intervalDifficulty: intervalDifficultyValue === 'difficile' ? 'difficile' : 'facile'
+    ,typeDifficulty: typeDifficultyValue === 'difficile' ? 'difficile' : 'facile'
     ,noteNaming: noteNamingValue === 'eng' ? 'eng' : 'ita'
   };
 
@@ -153,6 +168,8 @@ function handleSettingsChange(): void {
     && nextSettings.intervalPlaybackMode === state.settings.intervalPlaybackMode
     && nextSettings.intervalDirection === state.settings.intervalDirection
     && nextSettings.noteNaming === state.settings.noteNaming
+    && nextSettings.intervalDifficulty === state.settings.intervalDifficulty
+    && nextSettings.typeDifficulty === state.settings.typeDifficulty
   ) {
     return;
   }
@@ -295,6 +312,8 @@ async function previewChord(degree: number, source?: HTMLElement): Promise<void>
   state.round.cardPreviewCount += 1;
   const option = state.round.options[degree];
   const duration = playOption(option, state.settings.playMode, state.settings.playbackMode, { preview: true });
+  // Track that this option was listened to (preview) for ordering modes
+  markOptionsPlayed([degree]);
   pulseCardBackground(getCardAccent(degree), duration * 1000 + 120);
   animateCardTap(source, getCardAccent(degree));
   syncLiveUi(appRoot, state);
@@ -375,6 +394,11 @@ async function playSequence(): Promise<void> {
 
     state.isPlaying = false;
     state.round.sequenceFinishedAt = Date.now();
+    // For ordering modes, mark all solution options as played now (sequence finished)
+    if (isOrderingMode(state.settings.playMode)) {
+      markOptionsPlayed(state.round.solution);
+    }
+
     if (state.round.answerWindowStartedAt === null) {
       state.round.answerWindowStartedAt = state.round.sequenceFinishedAt;
     }
@@ -467,19 +491,34 @@ async function playAnswer(): Promise<void> {
   state.isPlaying = true;
   syncLiveUi(appRoot, state);
 
-  const spacing = getSequenceStep(state.settings.playMode, state.settings.playbackMode);
   const startAt = piano.currentTime + 0.08;
   const currentRoundId = state.round.id;
-  const durationMs = Math.ceil((chosenPlacements.length * spacing + 0.4) * 1000);
-  pulseSequenceBackground(durationMs);
-  animateAnswerSlots(chosenPlacements, spacing, currentRoundId);
+  let cursor = startAt;
+  const offsets: number[] = [];
 
-  chosenPlacements.forEach(({ degree }, index) => {
-    playOption(state.round.options[degree], state.settings.playMode, state.settings.playbackMode, {
+  // Schedule each chosen placement using its option.sequenceGap or duration
+  chosenPlacements.forEach(({ degree }) => {
+    const option = state.round.options[degree];
+    const duration = playOption(option, state.settings.playMode, state.settings.playbackMode, {
       preview: false,
-      when: startAt + index * spacing
+      when: cursor
     });
+
+    // record offset relative to startAt for animations
+    offsets.push(cursor - startAt);
+
+    // mark this option as played once
+    if (isOrderingMode(state.settings.playMode)) {
+      markOptionsPlayed([degree]);
+    }
+
+    const step = Math.max(option.sequenceGap ?? (duration + 0.2), duration + 0.2);
+    cursor += step;
   });
+
+  const durationMs = Math.ceil((cursor - startAt + 0.18) * 1000);
+  pulseSequenceBackground(durationMs);
+  animateAnswerSlots(chosenPlacements, offsets, currentRoundId);
 
   playbackTimerId = window.setTimeout(() => {
     if (state.round.id !== currentRoundId) {
@@ -491,7 +530,7 @@ async function playAnswer(): Promise<void> {
   }, durationMs);
 }
 
-function chooseIntervalAnswer(answerId: string, source: HTMLElement): void {
+async function chooseIntervalAnswer(answerId: string, source: HTMLElement): Promise<void> {
   if (!answerId || state.isPlaying || state.round.locked || state.round.solved) {
     return;
   }
@@ -508,6 +547,14 @@ function chooseIntervalAnswer(answerId: string, source: HTMLElement): void {
 
   animateCardTap(source, getCardAccent(question.answerOptions.findIndex((option) => option.id === answerId)));
   render();
+
+  // If difficulty is 'difficile', the selection is final: play preview (non-blocking) and finalize immediately
+  if (state.settings.intervalDifficulty === 'difficile') {
+    void previewIntervalAnswer(answerId);
+    finalizeIntervalAnswer(answerId);
+    return;
+  }
+
   void previewIntervalAnswer(answerId);
 }
 
@@ -604,7 +651,7 @@ function checkIntervalAnswer(): void {
   finalizeIntervalAnswer(state.round.selectedAnswerId);
 }
 
-function chooseTriadAnswer(answerId: string, source: HTMLElement): void {
+async function chooseTriadAnswer(answerId: string, source: HTMLElement): Promise<void> {
   if (!answerId || state.isPlaying) {
     return;
   }
@@ -630,6 +677,14 @@ function chooseTriadAnswer(answerId: string, source: HTMLElement): void {
 
   animateCardTap(source, getCardAccent(accentIndex));
   render();
+
+  // If difficulty for types is 'difficile' finalize immediately
+  if (state.settings.typeDifficulty === 'difficile') {
+    void previewTriadAnswer(answerId);
+    finalizeTriadAnswer(answerId);
+    return;
+  }
+
   void previewTriadAnswer(answerId);
 }
 
@@ -742,7 +797,7 @@ function checkTriadAnswer(): void {
   finalizeTriadAnswer(state.round.selectedAnswerId);
 }
 
-function chooseTetradAnswer(answerId: string, source: HTMLElement): void {
+async function chooseTetradAnswer(answerId: string, source: HTMLElement): Promise<void> {
   if (!answerId || state.isPlaying) {
     return;
   }
@@ -768,6 +823,14 @@ function chooseTetradAnswer(answerId: string, source: HTMLElement): void {
 
   animateCardTap(source, getCardAccent(accentIndex));
   render();
+
+  // If difficulty for types is 'difficile' finalize immediately
+  if (state.settings.typeDifficulty === 'difficile') {
+    void previewTetradAnswer(answerId);
+    finalizeTetradAnswer(answerId);
+    return;
+  }
+
   void previewTetradAnswer(answerId);
 }
 
@@ -1369,10 +1432,14 @@ function animateCardTap(source: HTMLElement | undefined, accent: string): void {
 
 function animateAnswerSlots(
   chosenPlacements: Array<{ degree: number; slotIndex: number }>,
-  spacing: number,
+  spacingOrOffsets: number | number[],
   roundId: number
 ): void {
   chosenPlacements.forEach(({ degree, slotIndex }, index) => {
+    const delayMs = Array.isArray(spacingOrOffsets)
+      ? Math.round((spacingOrOffsets[index] + 0.08) * 1000)
+      : Math.round((0.08 + index * spacingOrOffsets) * 1000);
+
     window.setTimeout(() => {
       if (state.round.id !== roundId) {
         return;
@@ -1380,7 +1447,7 @@ function animateAnswerSlots(
 
       const slotCard = appRoot.querySelector<HTMLElement>(`[data-slot-index="${slotIndex}"] .chord-card`);
       animateCardTap(slotCard ?? undefined, getCardAccent(degree));
-    }, Math.round((0.08 + index * spacing) * 1000));
+    }, delayMs);
   });
 }
 
@@ -1449,6 +1516,7 @@ function isIntervalType(value: string | undefined): value is IntervalType {
     || value === '5ª'
     || value === '6ª'
     || value === '7ª'
+    || value === '4ª, 5ª, 8ª'
     || value === '5ª, 4ª, 8ª'
     || value === '9ª'
     || value === 'Scala maggiore'
@@ -1502,6 +1570,9 @@ async function playOrderingSequence(): Promise<void> {
 
     state.isPlaying = false;
     state.round.sequenceFinishedAt = Date.now();
+    // Mark all ordered degrees as played (sequence finished)
+    markOptionsPlayed(state.round.solution);
+
     if (state.round.answerWindowStartedAt === null) {
       state.round.answerWindowStartedAt = state.round.sequenceFinishedAt;
     }
@@ -1511,6 +1582,42 @@ async function playOrderingSequence(): Promise<void> {
 
 function isOrderingMode(playMode: PlayMode): playMode is 'altezza' | 'durata' | 'intensita' {
   return playMode === 'altezza' || playMode === 'durata' || playMode === 'intensita';
+}
+
+function ensureOptionPlayTracking(): void {
+  if (!state.round) return;
+  if (!Array.isArray(state.round.optionPlayCounts) || state.round.optionPlayCounts.length !== state.round.options.length) {
+    state.round.optionPlayCounts = Array.from({ length: state.round.options.length }, () => 0);
+  }
+  if (typeof state.round.listensAfterCoverage !== 'number') {
+    state.round.listensAfterCoverage = 0;
+  }
+  if (typeof state.round.coverageAchievedAt === 'undefined') {
+    state.round.coverageAchievedAt = null;
+  }
+}
+
+function markOptionsPlayed(degrees: number[]): void {
+  if (!isOrderingMode(state.settings.playMode)) return;
+  ensureOptionPlayTracking();
+  const hadCoverage = state.round.coverageAchievedAt !== null;
+
+  // Update play counts
+  degrees.forEach((d) => {
+    if (d == null || d < 0 || d >= state.round.optionPlayCounts.length) return;
+    state.round.optionPlayCounts[d] = (state.round.optionPlayCounts[d] || 0) + 1;
+    if (hadCoverage) {
+      state.round.listensAfterCoverage += 1;
+    }
+  });
+
+  // If we didn't have coverage yet, check whether we've just reached it
+  if (!hadCoverage) {
+    const allPlayed = state.round.optionPlayCounts.length > 0 && state.round.optionPlayCounts.every((c) => c >= 1);
+    if (allPlayed) {
+      state.round.coverageAchievedAt = Date.now();
+    }
+  }
 }
 
 function lightenHex(hex: string, amount: number): string {

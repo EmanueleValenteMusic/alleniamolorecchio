@@ -54,18 +54,24 @@ export function computeScoreBreakdown(round: RoundState, settings: SettingsState
   }
 
   if (settings.playMode === 'altezza' || settings.playMode === 'durata' || settings.playMode === 'intensita') {
+    // Use coverage timestamp (when all options were listened at least once) if available
+    const coverageStart = round.coverageAchievedAt ?? round.answerWindowStartedAt;
+    const elapsed = coverageStart === null ? 999 : Math.max(0, (Date.now() - coverageStart) / 1000);
+
     const sequencePenalty = Math.max(0, round.sequencePlayCount - 1) * 16;
-    const cardPenalty = round.cardPreviewCount * 6;
-    const timePenalty = elapsedSeconds <= 9 ? 0 : Math.ceil((elapsedSeconds - 9) * 4);
+    // Penalize additional listens after initial coverage (higher listens -> lower score)
+    const listensAfterCoverage = round.listensAfterCoverage ?? 0;
+    const listenPenalty = listensAfterCoverage * 10;
+    const timePenalty = elapsed <= 9 ? 0 : Math.ceil((elapsed - 9) * 4);
     const attemptPenalty = round.attempts * 12;
-    const earned = Math.max(bounds.minScore, bounds.maxScore - sequencePenalty - cardPenalty - timePenalty - attemptPenalty);
+    const earned = Math.max(bounds.minScore, bounds.maxScore - sequencePenalty - listenPenalty - timePenalty - attemptPenalty);
 
     return {
       ...bounds,
       earned,
-      elapsedSeconds,
+      elapsedSeconds: elapsed,
       sequencePenalty,
-      cardPenalty,
+      cardPenalty: listenPenalty,
       timePenalty,
       attemptPenalty
     };

@@ -18,6 +18,9 @@ export function renderApp(state: AppState): string {
     ? state.round.options.filter((option) => !usedDegrees.has(option.degree))
     : state.round.options;
   const showCardsPanel = !isIntervalMode && !isTriadType && !isTetradType;
+  const isResetTargetMode = isOrderingMode || state.settings.playMode === 'nota singola' || state.settings.playMode === 'triadi' || state.settings.playMode === 'quadriadi';
+  const disableReset = isResetTargetMode && (state.round.locked || state.round.solved);
+  const disableCheck = (isIntervalMode && state.settings.intervalDifficulty === 'difficile') || ((isTriadType || isTetradType) && state.settings.typeDifficulty === 'difficile');
   const primaryActionLabel = state.isPlaying ? 'Suona...' : getPrimaryActionLabel(state);
 
   return `
@@ -79,6 +82,13 @@ export function renderApp(state: AppState): string {
                 <option value="entrambi" ${state.settings.intervalPlaybackMode === 'entrambi' ? 'selected' : ''}>Entrambi</option>
               </select>
             </label>
+            <label class="mini-control">
+              <span>Difficoltà</span>
+              <select data-setting="interval-difficulty">
+                <option value="facile" ${state.settings.intervalDifficulty === 'facile' ? 'selected' : ''}>Facile</option>
+                <option value="difficile" ${state.settings.intervalDifficulty === 'difficile' ? 'selected' : ''}>Difficile</option>
+              </select>
+            </label>
             ${state.settings.intervalPlaybackMode === 'melodico' ? `
               <label class="mini-control">
                 <span>Direzione</span>
@@ -103,12 +113,26 @@ export function renderApp(state: AppState): string {
                 <option value="melodico" ${state.settings.playbackMode === 'melodico' ? 'selected' : ''}>Melodico</option>
               </select>
             </label>
+            <label class="mini-control">
+              <span>Difficoltà</span>
+              <select data-setting="type-difficulty">
+                <option value="facile" ${state.settings.typeDifficulty === 'facile' ? 'selected' : ''}>Facile</option>
+                <option value="difficile" ${state.settings.typeDifficulty === 'difficile' ? 'selected' : ''}>Difficile</option>
+              </select>
+            </label>
           ` : isTetradType ? `
             <label class="mini-control">
               <span>Riproduzione</span>
               <select data-setting="playback-mode">
                 <option value="armonico" ${state.settings.playbackMode === 'armonico' ? 'selected' : ''}>Armonico</option>
                 <option value="melodico" ${state.settings.playbackMode === 'melodico' ? 'selected' : ''}>Melodico</option>
+              </select>
+            </label>
+            <label class="mini-control">
+              <span>Difficoltà</span>
+              <select data-setting="type-difficulty">
+                <option value="facile" ${state.settings.typeDifficulty === 'facile' ? 'selected' : ''}>Facile</option>
+                <option value="difficile" ${state.settings.typeDifficulty === 'difficile' ? 'selected' : ''}>Difficile</option>
               </select>
             </label>
           ` : `
@@ -148,8 +172,8 @@ export function renderApp(state: AppState): string {
         <div class="controls-panel__row controls-panel__row--actions">
           ${hideQuestionButton ? '' : `<button class="pill pill--question" data-role="play-sequence" data-action="play-sequence">${primaryActionLabel}</button>`}
           ${isIntervalMode || isTriadType || isTetradType ? '' : '<button class="pill pill--answer" data-role="play-answer" data-action="play-answer">Ascolta risposta</button>'}
-          <button class="pill pill--check" data-role="check-answer" data-action="check-answer">Verifica</button>
-          ${isIntervalMode || isTriadType || isTetradType ? '' : '<button class="pill pill--reset" data-role="reset-slots" data-action="reset-slots">Pulisci</button>'}
+          <button class="pill pill--check${disableCheck ? ' pill--transparent' : ''}" data-role="check-answer" data-action="check-answer" ${disableCheck ? 'disabled aria-disabled="true"' : ''}>Verifica</button>
+          ${isIntervalMode || isTriadType || isTetradType ? '' : `<button class="pill pill--reset" data-role="reset-slots" data-action="reset-slots" ${disableReset ? 'disabled aria-disabled="true"' : ''}>Pulisci</button>`}
           <button class="pill pill--new" data-role="new-round" data-action="new-round">Nuovo</button>
         </div>
       </section>

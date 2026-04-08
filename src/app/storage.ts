@@ -11,7 +11,9 @@ const DEFAULT_SETTINGS: SettingsState = {
   intervalType: '2ª',
   intervalPlaybackMode: 'armonico',
   intervalDirection: 'ascendente'
-  ,noteNaming: 'ita'
+  ,intervalDifficulty: 'facile',
+  typeDifficulty: 'facile',
+  noteNaming: 'ita'
 };
 
 export function loadSettings(): SettingsState {
@@ -22,6 +24,7 @@ export function loadSettings(): SettingsState {
     }
 
     const parsed = JSON.parse(raw) as Partial<SettingsState>;
+    const normalizedIntervalType = parsed.intervalType === '5ª, 4ª, 8ª' ? '4ª, 5ª, 8ª' : parsed.intervalType;
     return {
       slotCount: clampSlotCount(parsed.slotCount ?? DEFAULT_SETTINGS.slotCount),
       scaleFamily: parsed.scaleFamily === 'minore naturale' || parsed.scaleFamily === 'minore armonica' || parsed.scaleFamily === 'minore melodica'
@@ -29,13 +32,15 @@ export function loadSettings(): SettingsState {
         : 'maggiore',
       playMode: parsed.playMode === 'intervalli' || parsed.playMode === 'altezza' || parsed.playMode === 'durata' || parsed.playMode === 'intensita' || parsed.playMode === 'quadriadi' || parsed.playMode === 'nota singola' || parsed.playMode === 'triadi' || parsed.playMode === 'tipo triade' || parsed.playMode === 'tipo quadriadi' ? parsed.playMode : 'triadi',
       playbackMode: parsed.playbackMode === 'melodico' ? 'melodico' : 'armonico',
-      intervalType: parsed.intervalType === '3ª' || parsed.intervalType === '4ª' || parsed.intervalType === '5ª' || parsed.intervalType === '6ª' || parsed.intervalType === '7ª' || parsed.intervalType === '4ª, 5ª, 8ª' || parsed.intervalType === '9ª' || parsed.intervalType === 'Scala maggiore' || parsed.intervalType === 'Scala cromatica'
-        ? parsed.intervalType
+      intervalType: normalizedIntervalType === '3ª' || normalizedIntervalType === '4ª' || normalizedIntervalType === '5ª' || normalizedIntervalType === '6ª' || normalizedIntervalType === '7ª' || normalizedIntervalType === '4ª, 5ª, 8ª' || normalizedIntervalType === '9ª' || normalizedIntervalType === 'Scala maggiore' || normalizedIntervalType === 'Scala cromatica'
+        ? (normalizedIntervalType as SettingsState['intervalType'])
         : '2ª',
       intervalPlaybackMode: parsed.intervalPlaybackMode === 'melodico' || parsed.intervalPlaybackMode === 'entrambi'
         ? parsed.intervalPlaybackMode
         : 'armonico',
       intervalDirection: parsed.intervalDirection === 'discendente' ? 'discendente' : 'ascendente',
+      intervalDifficulty: parsed.intervalDifficulty === 'difficile' ? 'difficile' : 'facile',
+      typeDifficulty: parsed.typeDifficulty === 'difficile' ? 'difficile' : 'facile',
       noteNaming: parsed.noteNaming === 'eng' ? 'eng' : 'ita'
     };
   } catch {
